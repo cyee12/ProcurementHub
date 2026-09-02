@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Heineken Incentive Tracker 2025-2028</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',sans-serif;background:#f1f5f9;color:#1e293b;min-height:100vh}
+/* HEADER */
+.header{background:linear-gradient(135deg,#1565c0 0%,#1976d2 50%,#1565c0 100%);padding:24px 32px 0;box-shadow:0 4px 20px rgba(21,101,192,.3)}
+.header-top{display:flex;align-items:center;justify-content:space-between;padding-bottom:16px}
+.header-left{display:flex;align-items:center;gap:16px}
+.logo{font-size:32px}
+.header-title{font-size:22px;font-weight:700;letter-spacing:.5px}
+.header-sub{font-size:12px;opacity:.85;margin-top:3px}
+.header-right{text-align:right}
+.last-updated{font-size:12px;opacity:.8}
+.campaign-badge{background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.4);border-radius:20px;padding:4px 12px;font-size:11px;font-weight:600;margin-top:5px;display:inline-block}
+/* TABS */
+.tabs{display:flex;gap:4px;padding-top:4px}
+.tab-btn{padding:10px 22px;border:none;background:rgba(255,255,255,.15);color:rgba(255,255,255,.8);font-size:13px;font-weight:600;border-radius:8px 8px 0 0;cursor:pointer;transition:all .2s;letter-spacing:.3px}
+.tab-btn:hover{background:rgba(255,255,255,.25);color:#fff}
+.tab-btn.active{background:#ffffff;color:#1565c0}
+/* PAGES */
+.page{display:none}
+.page.active{display:block}
+/* MAIN */
+.main{max-width:1400px;margin:0 auto;padding:24px 20px}
+/* PROGRESS */
+.campaign-progress{background:#ffffff;border-radius:12px;padding:20px 24px;margin-bottom:20px;border:1px solid #e2e8f0;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.progress-header{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px}
+.progress-label{font-size:13px;color:#64748b}
+.progress-pct{font-size:22px;font-weight:700;color:#f59e0b}
+.progress-track{background:#dbeafe;border-radius:999px;height:22px;position:relative;overflow:hidden}
+.progress-fill{height:100%;border-radius:999px;background:linear-gradient(90deg,#1565c0,#2196f3)}
+.pace-marker{position:absolute;top:0;height:100%;width:3px;background:#f59e0b;z-index:2}
+.pace-marker::before{content:attr(data-label);position:absolute;top:-22px;left:50%;transform:translateX(-50%);font-size:10px;color:#f59e0b;white-space:nowrap;font-weight:600}
+.progress-info{display:flex;justify-content:space-between;margin-top:10px;font-size:12px;color:#64748b}
+/* KPI */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:20px}
+.kpi-card{background:#ffffff;border-radius:10px;padding:16px 18px;border:1px solid #e2e8f0;border-top:3px solid var(--accent,#1976d2);box-shadow:0 1px 4px rgba(0,0,0,.05)}
+.kpi-label{font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px}
+.kpi-value{font-size:26px;font-weight:700;color:var(--accent,#1976d2);line-height:1}
+.kpi-sub{font-size:11px;color:#94a3b8;margin-top:4px}
+.kpi-card.red{--accent:#ef4444}.kpi-card.orange{--accent:#f59e0b}.kpi-card.blue{--accent:#3b82f6}.kpi-card.purple{--accent:#8b5cf6}.kpi-card.teal{--accent:#2563eb}
+/* ALERT */
+.pace-alert{border-radius:8px;padding:12px 16px;margin-bottom:20px;display:flex;align-items:center;gap:10px;font-size:13px;border:1px solid}
+.pace-alert.behind{background:rgba(239,68,68,.08);border-color:rgba(239,68,68,.25);color:#dc2626}
+.pace-alert.ahead{background:rgba(37,99,235,.08);border-color:rgba(37,99,235,.25);color:#2563eb}
+/* LAYOUT */
+.section-title{font-size:15px;font-weight:600;color:#374151;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.section-title::after{content:'';flex:1;height:1px;background:#e5e7eb}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+@media(max-width:900px){.two-col{grid-template-columns:1fr}}
+.chart-card{background:#ffffff;border-radius:10px;padding:18px;border:1px solid #e2e8f0;box-shadow:0 1px 4px rgba(0,0,0,.05)}
+.chart-card canvas{max-height:260px}
+.table-card{background:#ffffff;border-radius:10px;padding:18px;border:1px solid #e2e8f0;box-shadow:0 1px 4px rgba(0,0,0,.05);margin-bottom:20px;overflow-x:auto}
+/* TABLES - consistent width */
+table{width:100%;border-collapse:collapse;font-size:13px;table-layout:auto}
+th{padding:9px 12px;text-align:left;color:#6b7280;font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.6px;border-bottom:2px solid #e5e7eb;white-space:nowrap;background:#f8fafc}
+td{padding:9px 12px;border-bottom:1px solid #f1f5f9;white-space:nowrap}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#f8fafc}
+td.pos{color:#2563eb}td.neg{color:#ef4444}td.fut{color:#cbd5e0;font-style:italic}
+.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600}
+.badge-r{background:rgba(239,68,68,.1);color:#dc2626;border:1px solid rgba(239,68,68,.2)}
+.badge-g{background:rgba(37,99,235,.1);color:#2563eb;border:1px solid rgba(37,99,235,.2)}
+.badge-grey{background:rgba(107,114,128,.1);color:#6b7280;border:1px solid rgba(107,114,128,.15)}
+.bar-bg{background:#dbeafe;border-radius:4px;height:6px;width:100px}
+.bar-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,#1565c0,#3b82f6)}
+/* PAGE 2 SPECIFIC */
+.pb2-controls{display:flex;align-items:center;gap:14px;margin-bottom:20px;flex-wrap:wrap}
+.pb2-label{font-size:13px;color:#64748b;font-weight:600}
+.pb2-select{background:#ffffff;border:1px solid #d1d5db;color:#1e293b;padding:9px 16px;border-radius:8px;font-size:13px;cursor:pointer;outline:none;min-width:180px;box-shadow:0 1px 2px rgba(0,0,0,.05)}
+.pb2-select:focus{border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.1)}
+.pb2-kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:20px}
+.pb2-kpi{background:#ffffff;border-radius:10px;padding:14px 16px;border:1px solid #e2e8f0;border-left:3px solid var(--c,#2563eb);box-shadow:0 1px 4px rgba(0,0,0,.05)}
+.pb2-kpi .lbl{font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px}
+.pb2-kpi .val{font-size:22px;font-weight:700;color:var(--c,#2563eb)}
+.pb2-kpi .sub{font-size:10px;color:#94a3b8;margin-top:3px}
+.rank-num{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;font-size:11px;font-weight:700;background:#f1f5f9;color:#6b7280;flex-shrink:0}
+.rank-1{background:rgba(255,215,0,.2);color:#d97706}
+.rank-2{background:rgba(156,163,175,.2);color:#6b7280}
+.rank-3{background:rgba(180,120,60,.15);color:#92400e}
+.hbar-wrap{display:flex;align-items:center;gap:8px}
+.hbar-bg{background:#dbeafe;border-radius:4px;height:8px;flex:1;min-width:60px}
+.hbar-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,#1565c0,#3b82f6)}
+.footer{text-align:center;padding:16px;font-size:11px;color:#94a3b8;border-top:1px solid #e5e7eb;margin-top:8px}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <div class="header-left">
+      <div class="logo">&#127866;</div>
+      <div>
+        <div class="header-title">Heineken Incentive Tracker</div>
+        <div class="header-sub">Campaign: 1 Dec 2025 &ndash; 30 Nov 2028 &nbsp;|&nbsp; Target: 2,880 HL</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="last-updated">Last updated: August 2026</div>
+      <div class="campaign-badge">36-Month Campaign</div>
+    </div>
+  </div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('dashboard',this)">&#128202; Dashboard</button>
+    <button class="tab-btn" onclick="switchTab('products',this)">&#127870; Product Breakdown</button>
+    <button class="tab-btn" onclick="switchTab('outlets',this)">&#127970; Outlet Performance</button>
+    <button class="tab-btn" onclick="switchTab('compare',this)">&#9878; Brand Comparison</button>
+  </div>
+</div>
+
+<!-- PAGE 1: DASHBOARD -->
+<div id="page-dashboard" class="page active">
+<div class="main">
+  <div class="campaign-progress">
+    <div class="progress-header">
+      <span class="progress-label">Overall Campaign Progress</span>
+      <span class="progress-pct" id="pPct">--</span>
+    </div>
+    <div class="progress-track">
+      <div class="progress-fill" id="pFill" style="width:0%"></div>
+      <div class="pace-marker" id="pMarker" data-label="Expected pace"></div>
+    </div>
+    <div class="progress-info">
+      <span id="pAchieved">--</span>
+      <span>Target: 2,880 HL</span>
+    </div>
+  </div>
+  <div class="pace-alert" id="pAlert">
+    <span style="font-size:18px" id="pIcon">&#9888;</span>
+    <span id="pMsg">--</span>
+  </div>
+  <div class="kpi-grid">
+    <div class="kpi-card teal"><div class="kpi-label">Total HL Achieved</div><div class="kpi-value" id="k1">--</div><div class="kpi-sub">of 2,880 HL target</div></div>
+    <div class="kpi-card orange"><div class="kpi-label">Monthly Target</div><div class="kpi-value">80.00 HL</div><div class="kpi-sub">to hit 2,880 HL in 36 months</div></div>
+    <div class="kpi-card blue"><div class="kpi-label">Avg Monthly (Actual)</div><div class="kpi-value" id="k3">--</div><div class="kpi-sub">Target: 80.00 HL/month</div></div>
+    <div class="kpi-card red"><div class="kpi-label">HL Behind / Ahead</div><div class="kpi-value" id="k4">--</div><div class="kpi-sub">vs cumulative target</div></div>
+    <div class="kpi-card purple"><div class="kpi-label">Required Rate (Remaining)</div><div class="kpi-value" id="k5">--</div><div class="kpi-sub" id="k5s">HL/month needed</div></div>
+    <div class="kpi-card orange"><div class="kpi-label">Est. Incentive Earned</div><div class="kpi-value" id="k6">--</div><div class="kpi-sub">based on actual purchases</div></div>
+  </div>
+  <div class="two-col">
+    <div class="chart-card"><div class="section-title">Monthly HL &mdash; Actual vs Target</div><canvas id="mc"></canvas></div>
+    <div class="chart-card"><div class="section-title">Cumulative Progress</div><canvas id="cc"></canvas></div>
+  </div>
+  <div class="section-title">Monthly Breakdown</div>
+  <div class="table-card">
+    <table><thead><tr><th>Month</th><th>Actual HL</th><th>Target HL</th><th>Monthly Var</th><th>Cumulative HL</th><th>Cum. Target</th><th>Cum. Variance</th><th>% of Target</th><th>Status</th></tr></thead><tbody id="mt"></tbody></table>
+  </div>
+  <div class="two-col">
+    <div class="chart-card"><div class="section-title">Product Mix (HL) &mdash; All Time</div><canvas id="pc"></canvas></div>
+    <div class="table-card" style="margin-bottom:0"><div class="section-title">Product Breakdown &mdash; All Time</div>
+      <table><thead><tr><th>Product</th><th>HL</th><th>Share</th><th>Incentive/HL</th><th>Est. Incentive (RM)</th><th>Bar</th></tr></thead><tbody id="pb"></tbody></table>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- PAGE 2: PRODUCT BREAKDOWN -->
+<div id="page-products" class="page">
+<div class="main">
+  <div class="pb2-controls">
+    <span class="pb2-label">Select Month:</span>
+    <select class="pb2-select" id="monthSelect" onchange="renderProductPage()">
+      <option value="ALL">All Months (Dec 2025 – Aug 2026)</option>
+    </select>
+  </div>
+
+  <div class="pb2-kpi-row">
+    <div class="pb2-kpi" style="--c:#39d353"><div class="lbl">Total HL</div><div class="val" id="p2total">--</div><div class="sub" id="p2period">selected period</div></div>
+    <div class="pb2-kpi" style="--c:#f0a500"><div class="lbl">No. of Products</div><div class="val" id="p2count">--</div><div class="sub">active products</div></div>
+    <div class="pb2-kpi" style="--c:#58a6ff"><div class="lbl">Top Product</div><div class="val" id="p2top" style="font-size:14px;line-height:1.3;margin-top:2px">--</div><div class="sub" id="p2tophl">HL</div></div>
+    <div class="pb2-kpi" style="--c:#a371f7"><div class="lbl">Est. Incentive (RM)</div><div class="val" id="p2inc">--</div><div class="sub">selected period</div></div>
+  </div>
+
+  <div class="section-title" id="p2tableTitle">Product Ranking</div>
+  <div class="table-card">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Product</th>
+          <th>Full Product Name</th>
+          <th>HL</th>
+          <th>Share %</th>
+          <th>Incentive / HL (RM)</th>
+          <th>Est. Incentive Earned (RM)</th>
+        </tr>
+      </thead>
+      <tbody id="p2tbody"></tbody>
+      <tfoot id="p2tfoot"></tfoot>
+    </table>
+  </div>
+</div>
+</div>
+
+<!-- PAGE 3: OUTLET PERFORMANCE -->
+<div id="page-outlets" class="page">
+<div class="main">
+  <div class="pb2-controls">
+    <span class="pb2-label">Select Month:</span>
+    <select class="pb2-select" id="outletMonthSelect" onchange="renderOutletPage()">
+      <option value="ALL">All Months (Dec 2025 – Aug 2026)</option>
+    </select>
+  </div>
+
+  <div class="pb2-kpi-row">
+    <div class="pb2-kpi" style="--c:#39d353"><div class="lbl">Total HL (All Outlets)</div><div class="val" id="o2total">--</div><div class="sub" id="o2period">selected period</div></div>
+    <div class="pb2-kpi" style="--c:#f0a500"><div class="lbl">No. of Outlets</div><div class="val" id="o2count">--</div><div class="sub">active outlets</div></div>
+    <div class="pb2-kpi" style="--c:#58a6ff"><div class="lbl">Top Outlet</div><div class="val" id="o2top" style="font-size:13px;line-height:1.3;margin-top:2px">--</div><div class="sub" id="o2tophl">HL</div></div>
+    <div class="pb2-kpi" style="--c:#f85149"><div class="lbl">Lowest Outlet</div><div class="val" id="o2bot" style="font-size:13px;line-height:1.3;margin-top:2px">--</div><div class="sub" id="o2bothl">HL</div></div>
+  </div>
+
+  <div class="section-title" id="o2tableTitle">Outlet × Product Breakdown</div>
+  <div class="table-card" style="overflow-x:auto">
+    <table id="o2table" style="min-width:900px">
+      <thead id="o2thead"></thead>
+      <tbody id="o2tbody"></tbody>
+      <tfoot id="o2tfoot"></tfoot>
+    </table>
+  </div>
+</div>
+</div>
+
+
+<!-- PAGE 4: BRAND COMPARISON -->
+<div id="page-compare" class="page">
+<div class="main">
+
+  <!-- KPI Summary -->
+  <div class="pb2-kpi-row" id="cmpKpiRow"></div>
+
+  <!-- Category Matchup Chart -->
+  <div class="chart-card" style="margin-bottom:20px">
+    <div class="section-title">Category HL — Heineken vs Carlsberg <span style="font-size:11px;color:#94a3b8;font-weight:400">(monthly avg, H=Dec'25–Jun'26 · C=Jan'24–Dec'25)</span></div>
+    <canvas id="cmpCatChart" style="max-height:300px"></canvas>
+  </div>
+
+  <!-- Product Matchup Table -->
+  <div class="section-title">Product Category Analysis — Where is the Gap?</div>
+  <div class="table-card" style="overflow-x:auto;margin-bottom:20px">
+    <table style="width:100%">
+      <thead>
+        <tr>
+          <th>Category</th>
+          <th style="color:#1976d2">Heineken Product(s)</th>
+          <th style="color:#1976d2;text-align:right">H Avg HL/mth</th>
+          <th style="color:#e8572a">Carlsberg Product(s)</th>
+          <th style="color:#e8572a;text-align:right">C Avg HL/mth</th>
+          <th style="text-align:right">Gap (H−C)</th>
+          <th style="text-align:center">Who Leads</th>
+        </tr>
+      </thead>
+      <tbody id="cmpMatchTbody"></tbody>
+    </table>
+  </div>
+
+  <!-- Head-to-Head Spotlight -->
+  <div class="section-title">Head-to-Head Spotlight</div>
+  <div id="cmpSpotlight" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px;margin-bottom:20px"></div>
+
+</div>
+</div>
+
+<div class="footer">Data source: GRN date &amp; Invoice Quantity from purchase records &nbsp;|&nbsp; Upload new purchase CSV each month to refresh</div>
+
+<script>
+// ─── DATA ───────────────────────────────────────────────
+const T=2880, NMONTHS=36, MT=T/NMONTHS;
+
+const MD={"2025-12":74.964,"2026-01":53.5604,"2026-02":61.9244,"2026-03":46.41,"2026-04":46.9352,"2026-05":55.4244,"2026-06":45.332,"2026-07":44.7828,"2026-08":0.9336};
+
+// Per-month product HL breakdown
+const MPD={"2025-12":{"Edelweiss Can":3.456,"Tiger Pint":29.718,"Tiger Soju Can":3.072,"Heineken 5L Keg":0.2,"Shandy Anglia":0.384,"Heineken Pint":19.968,"Guinness 10L Keg":0.8,"Heineken 10L Keg":0.7,"Tiger Can":1.152,"Fox Cider Pint":2.574,"Guinness Pint":9.984,"Tiger 30L Keg":2.4,"Kilkenny 10L Keg":0.4,"Tiger Soju Pint":0.156},"2026-01":{"Edelweiss Can":1.6896,"Fox Cider Pint":1.638,"Guinness 10L Keg":2.0,"Heineken 10L Keg":0.8,"Heineken 5L Keg":2.1,"Tiger 30L Keg":2.4,"Guinness Pint":0.702,"Heineken Pint":8.97,"Tiger Pint":28.86,"Tiger Can":1.6128,"Tiger Soju Can":0.9216,"Shandy Anglia":1.3824,"Fox Cider Can":0.384,"Kilkenny 10L Keg":0.1},"2026-02":{"Edelweiss Can":2.3808,"Fox Cider Can":0.0768,"Fox Cider Pint":2.652,"Guinness 10L Keg":0.3,"Guinness Pint":2.574,"Heineken 10L Keg":0.3,"Heineken 5L Keg":0.75,"Heineken Pint":15.054,"Kilkenny 10L Keg":0.2,"Tiger 30L Keg":2.1,"Tiger Can":0.9216,"Tiger Pint":33.54,"Tiger Soju Can":1.0752},"2026-03":{"Edelweiss Can":1.4592,"Fox Cider Pint":1.404,"Guinness Pint":3.744,"Heineken Pint":11.154,"Tiger 30L Keg":0.9,"Tiger Pint":26.52,"Tiger Soju Can":1.2288},"2026-04":{"Edelweiss Can":1.152,"Fox Cider Pint":1.482,"Guinness 10L Keg":0.5,"Guinness Pint":2.106,"Heineken 10L Keg":0.3,"Heineken Pint":8.736,"Kilkenny 10L Keg":0.3,"Tiger 30L Keg":1.8,"Tiger Pint":29.484,"Tiger Soju Can":1.0752},"2026-05":{"Edelweiss Can":1.8816,"Fox Cider Pint":2.028,"Guinness 10L Keg":0.7,"Guinness Pint":4.212,"Heineken 10L Keg":0.4,"Heineken Pint":12.402,"Kilkenny 10L Keg":0.1,"Tiger 30L Keg":1.5,"Tiger Pint":31.356,"Tiger Soju Can":0.8448},"2026-06":{"Edelweiss Can":1.2288,"Fox Cider Pint":1.092,"Guinness 10L Keg":0.5,"Guinness Pint":2.496,"Heineken 10L Keg":0.2,"Heineken Pint":8.502,"Kilkenny 10L Keg":0.1,"Tiger 30L Keg":1.5,"Tiger Pint":29.406,"Tiger Soju Can":0.3072},"2026-07":{"Edelweiss Can":1.536,"Fox Cider Pint":0.234,"Guinness 10L Keg":0.5,"Guinness Pint":3.12,"Heineken 10L Keg":0.4,"Heineken Pint":9.282,"Tiger 30L Keg":2.1,"Tiger Pint":27.534,"Tiger Soju Can":0.0768},"2026-08":{"Edelweiss Can":0.1536,"Tiger Pint":0.78}};
+
+// Full product meta (name → incentive per HL)
+const PMETA={
+  "Tiger Pint":750,"Heineken Pint":800,"Guinness Pint":800,"Edelweiss Can":88,
+  "Fox Cider Pint":600,"Tiger 30L Keg":750,"Tiger Soju Can":400,"Guinness 10L Keg":850,
+  "Tiger Can":350,"Heineken 5L Keg":0,"Heineken 10L Keg":850,"Shandy Anglia":0,
+  "Kilkenny 10L Keg":850,"Fox Cider Can":350,"Tiger Soju Pint":700
+};
+
+const COLORS=['#2563eb','#f59e0b','#3b82f6','#8b5cf6','#ef4444','#f97316','#60a5fa','#fb7185','#a78bfa','#0ea5e9','#fbbf24','#38bdf8','#c084fc','#f87171','#93c5fd'];
+const PFULL={
+  "Tiger Pint":"BEER - TIGER (PINT) 24 X 325ML/CRT",
+  "Heineken Pint":"BEER - HEINEKEN (PINT) 24 X 325ML/CRT",
+  "Guinness Pint":"BEER - GUINNESS STOUT (PINT) 24 X 325ML/CRT",
+  "Edelweiss Can":"BEER - EDELWEISS CAN 24 X 320ML",
+  "Fox Cider Pint":"CIDER - APPLE FOX (PINT) 24 X 325ML/CRT",
+  "Tiger 30L Keg":"DRAUGHT - TIGER 30L KEG",
+  "Tiger Soju Can":"BEER - TIGER SOJU CAN 24 X 320ML",
+  "Guinness 10L Keg":"DRAUGHT - GUINNESS 10L KEG",
+  "Tiger Can":"BEER - TIGER CAN 24 X 320ML",
+  "Heineken 5L Keg":"DRAUGHT - HEINEKEN 5L KEG",
+  "Heineken 10L Keg":"DRAUGHT - HEINEKEN 10L KEG",
+  "Shandy Anglia":"SHANDY - ANGLIA (CAN) 24 X 320ML",
+  "Kilkenny 10L Keg":"DRAUGHT - KILKENNY 10L KEG",
+  "Fox Cider Can":"CIDER - APPLE FOX (CAN) 24 X 320ML/CRT",
+  "Tiger Soju Pint":"BEER - TIGER SOJU PINT 24 X 325ML"
+};
+// Official outlet shortcodes
+const SHORTCODE={
+  "Loud Speaker @ Kepong":"KPG",
+  "Loud Speaker @ Lowyat":"LYT",
+  "Loud Speaker @ Taman Sutera":"TSU",
+  "Loud Speaker @ C180":"CCS",
+  "Loud Speaker @ Subang":"SBA",
+  "Loud Speaker @ Tropicana":"TPG",
+  "Loud Speaker @ Georgetown":"PGA",
+  "Loud Speaker @ Mount Austin":"TMA",
+  "Loud Speaker @ Sri Petaling":"BSP",
+  "Loud Speaker @ Setapak":"SPK",
+  "Loud Speaker @ Sunway Carnival":"PSC",
+  "Loud Speaker @ Ampang":"DJM",
+  "Loud Speaker @ Mytown":"MYT",
+  "Loud Speaker @ Puchong":"STP",
+  "Mini Studio @ Toppen Mall":"MST",
+  "Mini Studio @ Lowyat":"MLY",
+  "Mini Studio @ Aeon Maluri":"MAM",
+  "Mini Studio @ Quayside Mall":"MQS",
+  "Mini Studio @ Dpulze Mall":"MDP"
+};
+
+
+// ─── HELPERS ───────────────────────────────────────────
+function fm(n,d=2){return Number(n).toLocaleString('en-MY',{minimumFractionDigits:d,maximumFractionDigits:d})}
+function fr(n){return'RM '+Number(n).toLocaleString('en-MY',{minimumFractionDigits:0,maximumFractionDigits:0})}
+
+function sched(){
+  const s=[];let y=2025,mo=12;
+  for(let i=0;i<NMONTHS;i++){
+    const k=`${y}-${String(mo).padStart(2,'0')}`;
+    const lb=new Date(y,mo-1,1).toLocaleDateString('en-MY',{month:'short',year:'numeric'});
+    s.push({k,lb,a:MD[k]??null});
+    mo++;if(mo>12){mo=1;y++;}
+  }
+  return s;
+}
+
+// ─── TAB SWITCH ────────────────────────────────────────
+function switchTab(name,btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ─── PAGE 1: DASHBOARD ─────────────────────────────────
+(function initDashboard(){
+  const s=sched();
+  const tot=Object.values(MD).reduce((a,b)=>a+b,0);
+  const nd=s.filter(x=>x.a!==null).length;
+  const avg=nd>0?tot/nd:0;
+  const ct=nd*MT;
+  const va=tot-ct;
+  const mr=NMONTHS-nd;
+  const rr=mr>0?(T-tot)/mr:0;
+  const pct=tot/T*100;
+
+  // All-time incentive
+  const allProd=aggregateProducts('ALL');
+  const inc=allProd.reduce((s,p)=>s+p.hl*p.iph,0);
+
+  document.getElementById('pPct').textContent=fm(pct,1)+'%';
+  document.getElementById('pFill').style.width=Math.min(pct,100)+'%';
+  document.getElementById('pAchieved').textContent=fm(tot)+' HL achieved';
+  document.getElementById('pMarker').style.left=(nd/NMONTHS*100)+'%';
+
+  const al=document.getElementById('pAlert');
+  if(va<0){
+    al.className='pace-alert behind';
+    document.getElementById('pIcon').textContent='⚠️';
+    document.getElementById('pMsg').innerHTML='<strong>Behind target by '+fm(Math.abs(va))+' HL</strong> after '+nd+' months. Need <strong>'+fm(rr)+' HL/month</strong> for remaining '+mr+' months to hit 2,880 HL.';
+  }else{
+    al.className='pace-alert ahead';
+    document.getElementById('pIcon').textContent='✅';
+    document.getElementById('pMsg').innerHTML='<strong>Ahead of target by '+fm(va)+' HL</strong> — great pace! Keep it up.';
+  }
+
+  document.getElementById('k1').textContent=fm(tot)+' HL';
+  document.getElementById('k3').textContent=fm(avg)+' HL';
+  const k4=document.getElementById('k4');
+  k4.textContent=(va>=0?'+':'')+fm(va)+' HL';
+  k4.style.color=va>=0?'#3fb950':'#f85149';
+  document.getElementById('k5').textContent=fm(rr)+' HL';
+  document.getElementById('k5s').textContent='HL/month x '+mr+' months left';
+  document.getElementById('k6').textContent=fr(inc);
+
+  // Monthly table
+  const tb=document.getElementById('mt');
+  let ca=0,ctt=0;
+  s.forEach(m=>{
+    ctt+=MT;if(m.a!==null)ca+=m.a;
+    const h=m.a!==null,mv=h?m.a-MT:null,cv=h?ca-ctt:null,pt=h?m.a/MT*100:null;
+    const badge=!h?'<span class="badge badge-grey">Pending</span>':pt>=100?'<span class="badge badge-g">&#10003; Hit</span>':'<span class="badge badge-r">&#10007; Missed</span>';
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${m.lb}</td><td class="${!h?'fut':''}">${h?fm(m.a):'—'}</td><td>${fm(MT)}</td><td class="${mv===null?'fut':mv>=0?'pos':'neg'}">${mv===null?'—':(mv>=0?'+':'')+fm(mv)}</td><td class="${!h?'fut':''}">${h?fm(ca):'—'}</td><td>${fm(ctt)}</td><td class="${cv===null?'fut':cv>=0?'pos':'neg'}">${cv===null?'—':(cv>=0?'+':'')+fm(cv)}</td><td class="${!h?'fut':''}">${pt!==null?fm(pt,1)+'%':'—'}</td><td>${badge}</td>`;
+    tb.appendChild(tr);
+  });
+
+  // Monthly chart
+  const lbs=s.map(x=>x.lb),ac=s.map(x=>x.a);
+  new Chart(document.getElementById('mc'),{type:'bar',data:{labels:lbs,datasets:[{label:'Actual HL',data:ac,backgroundColor:ac.map(v=>v===null?'transparent':v>=MT?'rgba(37,99,235,.75)':'rgba(239,68,68,.75)'),borderRadius:4,order:2},{label:'Target (80 HL)',data:s.map(_=>MT),type:'line',borderColor:'#f0a500',borderWidth:2,borderDash:[5,4],pointRadius:0,fill:false,order:1}]},options:{responsive:true,maintainAspectRatio:true,plugins:{legend:{labels:{color:'#6b7280',boxWidth:12,font:{size:11}}}},scales:{x:{ticks:{color:'#8b949e',font:{size:9},maxRotation:45},grid:{color:'#f1f5f9'}},y:{ticks:{color:'#9ca3af'},grid:{color:'#f1f5f9'},title:{display:true,text:'HL',color:'#6b7280'}}}}});
+
+  // Cumulative chart
+  let ca2=0;const ca3=s.map(m=>{if(m.a!==null){ca2+=m.a;return ca2;}return null;});
+  let ct2=0;const ct3=s.map(_=>{ct2+=MT;return ct2;});
+  new Chart(document.getElementById('cc'),{type:'line',data:{labels:lbs,datasets:[{label:'Cumulative Actual',data:ca3,borderColor:'#2563eb',backgroundColor:'rgba(37,99,235,.1)',fill:true,tension:.3,pointRadius:3,pointBackgroundColor:'#2563eb'},{label:'Required Pace',data:ct3,borderColor:'#f0a500',borderDash:[5,4],borderWidth:2,pointRadius:0,fill:false}]},options:{responsive:true,maintainAspectRatio:true,plugins:{legend:{labels:{color:'#6b7280',boxWidth:12,font:{size:11}}}},scales:{x:{ticks:{color:'#8b949e',font:{size:9},maxRotation:45},grid:{color:'#f1f5f9'}},y:{ticks:{color:'#9ca3af'},grid:{color:'#f1f5f9'},title:{display:true,text:'HL',color:'#6b7280'}}}}});
+
+  // All-time product donut + table
+  const t8=[...allProd].sort((a,b)=>b.hl-a.hl).slice(0,8);
+  new Chart(document.getElementById('pc'),{type:'doughnut',data:{labels:t8.map(p=>p.n),datasets:[{data:t8.map(p=>p.hl),backgroundColor:COLORS.slice(0,8),borderColor:'#ffffff',borderWidth:2}]},options:{responsive:true,maintainAspectRatio:true,plugins:{legend:{position:'right',labels:{color:'#8b949e',boxWidth:10,font:{size:10},padding:8}},tooltip:{callbacks:{label:ctx=>` ${ctx.label}: ${fm(ctx.raw)} HL (${fm(ctx.raw/tot*100,1)}%)`}}}}});
+
+  const pb=document.getElementById('pb');
+  [...allProd].sort((a,b)=>b.hl-a.hl).forEach(p=>{
+    const sh=tot>0?p.hl/tot*100:0,inc2=p.hl*p.iph;
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${p.n}</td><td>${fm(p.hl)}</td><td>${fm(sh,1)}%</td><td>${p.iph>0?'RM '+p.iph:'—'}</td><td>${inc2>0?fr(inc2):'—'}</td><td><div class="bar-bg"><div class="bar-fill" style="width:${Math.min(sh,100)}%"></div></div></td>`;
+    pb.appendChild(tr);
+  });
+})();
+
+// ─── PAGE 2: PRODUCT BREAKDOWN ─────────────────────────
+function aggregateProducts(monthKey){
+  const map={};
+  const months=monthKey==='ALL'?Object.keys(MPD):[monthKey];
+  months.forEach(mk=>{
+    const data=MPD[mk];
+    if(!data)return;
+    Object.entries(data).forEach(([name,hl])=>{
+      if(!map[name])map[name]={n:name,hl:0,iph:PMETA[name]??0};
+      map[name].hl+=hl;
+    });
+  });
+  return Object.values(map).sort((a,b)=>b.hl-a.hl);
+}
+
+// Populate dropdown
+(function(){
+  const sel=document.getElementById('monthSelect');
+  const months=Object.keys(MPD).sort();
+  months.forEach(mk=>{
+    const d=new Date(mk+'-01');
+    const lb=d.toLocaleDateString('en-MY',{month:'long',year:'numeric'});
+    const opt=document.createElement('option');
+    opt.value=mk;opt.textContent=lb;
+    sel.appendChild(opt);
+  });
+})();
+
+function renderProductPage(){
+  const mk=document.getElementById('monthSelect').value;
+  const prods=aggregateProducts(mk);
+  const tot=prods.reduce((s,p)=>s+p.hl,0);
+  const inc=prods.reduce((s,p)=>s+p.hl*p.iph,0);
+
+  let period=mk==='ALL'?'Dec 2025 – Aug 2026':new Date(mk+'-01').toLocaleDateString('en-MY',{month:'long',year:'numeric'});
+  const title=mk==='ALL'?'All Months':period;
+
+  document.getElementById('p2total').textContent=fm(tot)+' HL';
+  document.getElementById('p2period').textContent=period;
+  document.getElementById('p2count').textContent=prods.length;
+  document.getElementById('p2inc').textContent=fr(inc);
+  if(prods.length>0){
+    document.getElementById('p2top').textContent=prods[0].n;
+    document.getElementById('p2tophl').textContent=fm(prods[0].hl)+' HL';
+  }
+  document.getElementById('p2tableTitle').textContent='Product Ranking — '+title;
+
+  // Table
+  const tb=document.getElementById('p2tbody');
+  tb.innerHTML='';
+  prods.forEach((p,i)=>{
+    const share=tot>0?p.hl/tot*100:0;
+    const inc2=p.hl*p.iph;
+    const rankCls=i===0?'rank-1':i===1?'rank-2':i===2?'rank-3':'';
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td><span class="rank-num ${rankCls}">${i+1}</span></td>
+      <td><strong>${p.n}</strong></td>
+      <td style="color:#6b7280;font-size:12px">${PFULL[p.n]||'—'}</td>
+      <td>${fm(p.hl)}</td>
+      <td>${fm(share,1)}%</td>
+      <td style="color:#6b7280">${p.iph>0?'RM '+p.iph:'—'}</td>
+      <td style="color:#2563eb;font-weight:600">${inc2>0?fr(inc2):'—'}</td>
+    `;
+    tb.appendChild(tr);
+  });
+
+  // Total row
+  const tf=document.getElementById('p2tfoot');
+  tf.innerHTML=`<tr style="border-top:2px solid #e2e8f0;font-weight:700;background:#f8fafc">
+    <td colspan="3" style="color:#374151;padding:10px 12px">TOTAL</td>
+    <td style="padding:10px 12px">${fm(tot)}</td>
+    <td style="padding:10px 12px">100%</td>
+    <td style="padding:10px 12px"></td>
+    <td style="padding:10px 12px;color:#2563eb;font-weight:700">${fr(inc)}</td>
+  </tr>`;
+}
+
+renderProductPage();
+
+// Per-outlet, per-month, per-product HL
+const OPD={"Loud Speaker @ Ampang":{"2025-12":{"Guinness Pint":0.39,"Heineken Pint":0.624,"Tiger Soju Can":0.2304,"Edelweiss Can":0.1536,"Tiger Pint":0.234,"Fox Cider Pint":0.156},"2026-01":{"Tiger Can":0.0768,"Heineken 5L Keg":0.1,"Shandy Anglia":0.0768},"2026-02":{"Heineken Pint":0.234,"Tiger Pint":0.156},"2026-03":{"Heineken Pint":0.234,"Tiger Pint":0.234},"2026-04":{"Heineken Pint":0.156,"Tiger Pint":0.156},"2026-05":{"Fox Cider Pint":0.078,"Tiger Pint":0.39,"Tiger Soju Can":0.1536},"2026-07":{"Heineken Pint":0.156,"Tiger Pint":0.234}},"Loud Speaker @ C180":{"2025-12":{"Edelweiss Can":0.3072,"Guinness Pint":0.936,"Heineken Pint":1.326,"Tiger Pint":2.652,"Tiger Soju Can":0.2304,"Fox Cider Pint":0.156},"2026-01":{"Guinness Pint":0.156,"Heineken Pint":0.624,"Tiger Pint":2.34,"Fox Cider Pint":0.078,"Heineken 5L Keg":0.1,"Shandy Anglia":0.1536},"2026-02":{"Edelweiss Can":0.3072,"Fox Cider Pint":0.156,"Guinness Pint":0.312,"Heineken Pint":0.312,"Tiger Pint":2.73},"2026-03":{"Edelweiss Can":0.384,"Fox Cider Pint":0.624,"Guinness Pint":1.56,"Heineken Pint":1.95,"Tiger Pint":3.12,"Tiger Soju Can":0.384},"2026-04":{"Tiger Pint":0.78},"2026-05":{"Heineken Pint":0.858,"Tiger Pint":2.184},"2026-06":{"Guinness Pint":0.234,"Heineken Pint":0.546,"Tiger Pint":2.73},"2026-07":{"Fox Cider Pint":0.0,"Guinness Pint":0.546,"Heineken Pint":0.39,"Tiger Pint":3.12}},"Loud Speaker @ Georgetown":{"2025-12":{"Edelweiss Can":0.4608,"Guinness Pint":0.78,"Heineken Pint":1.56,"Tiger Pint":1.56,"Tiger Soju Can":0.4608,"Fox Cider Pint":0.156},"2026-01":{"Edelweiss Can":0.1536,"Heineken Pint":0.39,"Tiger Pint":2.34,"Heineken 5L Keg":0.15,"Tiger Can":0.1536,"Shandy Anglia":0.1536},"2026-02":{"Edelweiss Can":0.0768,"Fox Cider Pint":0.234,"Guinness Pint":0.078,"Heineken Pint":0.702,"Tiger Can":0.768,"Tiger Pint":2.34,"Tiger Soju Can":0.0768},"2026-03":{"Edelweiss Can":0.1536,"Fox Cider Pint":0.078,"Guinness Pint":0.234,"Heineken Pint":0.936,"Tiger Pint":2.028,"Tiger Soju Can":0.1536},"2026-04":{"Edelweiss Can":0.2304,"Fox Cider Pint":0.234,"Guinness Pint":0.39,"Heineken Pint":1.17,"Tiger Pint":2.964,"Tiger Soju Can":0.2304},"2026-05":{"Edelweiss Can":0.2304,"Fox Cider Pint":0.312,"Guinness Pint":0.39,"Heineken Pint":1.092,"Tiger Pint":2.964},"2026-06":{"Edelweiss Can":0.1536,"Guinness Pint":0.312,"Heineken Pint":0.78,"Tiger Pint":2.34},"2026-07":{"Edelweiss Can":0.1536,"Heineken Pint":1.014,"Tiger Pint":2.886,"Tiger Soju Can":0.0}},"Loud Speaker @ Kepong":{"2025-12":{"Tiger Pint":5.46,"Guinness Pint":3.354,"Heineken Pint":2.964,"Edelweiss Can":0.384,"Tiger Soju Can":0.384,"Fox Cider Pint":0.39},"2026-01":{"Tiger Pint":7.41,"Heineken 5L Keg":0.2,"Heineken Pint":1.17,"Edelweiss Can":0.0768,"Tiger Can":0.0768,"Tiger Soju Can":0.0768,"Shandy Anglia":0.0768},"2026-02":{"Edelweiss Can":0.5376,"Fox Cider Pint":0.78,"Heineken 5L Keg":0.15,"Heineken Pint":2.34,"Tiger Pint":8.58,"Tiger Soju Can":0.384},"2026-03":{"Guinness Pint":0.78,"Heineken Pint":1.95,"Tiger Pint":7.02},"2026-04":{"Edelweiss Can":0.2304,"Guinness Pint":0.39,"Heineken Pint":0.39,"Tiger Pint":8.19,"Tiger Soju Can":0.0768},"2026-05":{"Edelweiss Can":0.4608,"Guinness Pint":1.482,"Heineken Pint":2.106,"Tiger Pint":8.19},"2026-06":{"Edelweiss Can":0.0768,"Fox Cider Pint":0.234,"Guinness Pint":0.39,"Heineken Pint":2.028,"Tiger Pint":7.8,"Tiger Soju Can":0.1536},"2026-07":{"Guinness Pint":1.014,"Heineken Pint":1.56,"Tiger Pint":7.02}},"Loud Speaker @ Lowyat":{"2025-12":{"Heineken Pint":2.34,"Tiger Pint":3.51,"Guinness 10L Keg":0.8,"Heineken 10L Keg":0.7,"Edelweiss Can":0.0768,"Tiger Can":0.0768,"Tiger Soju Can":0.0768,"Heineken 5L Keg":0.1,"Shandy Anglia":0.0768,"Tiger 30L Keg":2.4,"Kilkenny 10L Keg":0.4,"Tiger Soju Pint":0.156,"Fox Cider Pint":0.156},"2026-01":{"Fox Cider Pint":0.78,"Guinness 10L Keg":2.0,"Heineken 10L Keg":0.8,"Heineken 5L Keg":0.05,"Tiger 30L Keg":2.4,"Heineken Pint":0.78,"Tiger Pint":3.12,"Kilkenny 10L Keg":0.1},"2026-02":{"Guinness 10L Keg":0.3,"Heineken 10L Keg":0.3,"Heineken 5L Keg":0.15,"Heineken Pint":1.56,"Kilkenny 10L Keg":0.2,"Tiger 30L Keg":2.1,"Tiger Pint":3.9},"2026-03":{"Heineken Pint":0.78,"Tiger 30L Keg":0.9,"Tiger Pint":2.34},"2026-04":{"Guinness 10L Keg":0.5,"Heineken 10L Keg":0.3,"Heineken Pint":1.17,"Kilkenny 10L Keg":0.3,"Tiger 30L Keg":1.8,"Tiger Pint":3.9},"2026-05":{"Fox Cider Pint":0.39,"Guinness 10L Keg":0.7,"Heineken 10L Keg":0.4,"Heineken Pint":0.78,"Kilkenny 10L Keg":0.1,"Tiger 30L Keg":1.5,"Tiger Pint":1.17},"2026-06":{"Guinness 10L Keg":0.5,"Heineken 10L Keg":0.2,"Heineken Pint":0.624,"Kilkenny 10L Keg":0.1,"Tiger 30L Keg":1.5,"Tiger Pint":3.12},"2026-07":{"Guinness 10L Keg":0.5,"Heineken 10L Keg":0.4,"Heineken Pint":1.17,"Tiger 30L Keg":2.1,"Tiger Pint":1.95}},"Loud Speaker @ Mount Austin":{"2025-12":{"Edelweiss Can":0.3072,"Tiger Pint":2.028,"Tiger Soju Can":0.1536,"Fox Cider Pint":0.39,"Heineken Pint":1.95,"Guinness Pint":0.312},"2026-01":{"Edelweiss Can":0.6144,"Guinness Pint":0.078,"Tiger Pint":2.574,"Heineken Pint":1.404,"Tiger Soju Can":0.5376,"Fox Cider Can":0.2304,"Heineken 5L Keg":0.2,"Fox Cider Pint":0.234,"Shandy Anglia":0.3072,"Tiger Can":0.3072},"2026-02":{"Edelweiss Can":0.4608,"Fox Cider Pint":0.312,"Guinness Pint":0.702,"Heineken Pint":1.872,"Tiger Pint":1.638,"Tiger Soju Can":0.2304},"2026-03":{"Edelweiss Can":0.3072,"Fox Cider Pint":0.156,"Guinness Pint":0.156,"Heineken Pint":1.95,"Tiger Pint":2.574,"Tiger Soju Can":0.2304},"2026-04":{"Edelweiss Can":0.1536,"Fox Cider Pint":0.156,"Guinness Pint":0.156,"Heineken Pint":1.872,"Tiger Pint":2.418,"Tiger Soju Can":0.0768},"2026-05":{"Edelweiss Can":0.2304,"Fox Cider Pint":0.39,"Guinness Pint":0.39,"Heineken Pint":1.638,"Tiger Pint":3.12,"Tiger Soju Can":0.2304},"2026-06":{"Edelweiss Can":0.5376,"Fox Cider Pint":0.39,"Guinness Pint":0.234,"Heineken Pint":1.56,"Tiger Pint":1.638,"Tiger Soju Can":0.1536},"2026-07":{"Edelweiss Can":0.768,"Fox Cider Pint":0.156,"Guinness Pint":0.234,"Heineken Pint":1.092,"Tiger Pint":3.042}},"Loud Speaker @ Mytown":{"2025-12":{"Guinness Pint":0.546,"Heineken Pint":0.39,"Tiger Pint":1.326,"Tiger Soju Can":0.2304,"Edelweiss Can":0.2304,"Fox Cider Pint":0.156},"2026-01":{"Tiger Can":0.384,"Heineken Pint":0.624,"Edelweiss Can":0.0768,"Tiger Pint":0.234,"Heineken 5L Keg":0.05,"Shandy Anglia":0.0768},"2026-02":{"Edelweiss Can":0.0768,"Heineken Pint":0.312,"Tiger Pint":0.936},"2026-03":{"Heineken Pint":0.078,"Tiger Pint":0.39},"2026-04":{"Fox Cider Pint":0.078,"Guinness Pint":0.156,"Tiger Pint":0.39},"2026-05":{"Edelweiss Can":0.0768,"Fox Cider Pint":0.078,"Guinness Pint":0.156,"Heineken Pint":0.624,"Tiger Pint":0.78,"Tiger Soju Can":0.0768},"2026-06":{"Guinness Pint":0.156,"Heineken Pint":0.312,"Tiger Pint":0.702},"2026-07":{"Guinness Pint":0.156,"Heineken Pint":0.156,"Tiger Pint":0.234}},"Loud Speaker @ Puchong":{"2025-12":{"Edelweiss Can":0.2304,"Guinness Pint":0.78,"Heineken Pint":0.78,"Tiger Pint":1.17,"Fox Cider Pint":0.234},"2026-01":{"Heineken 5L Keg":0.2,"Tiger Can":0.1536,"Tiger Pint":0.546,"Tiger Soju Can":0.1536,"Shandy Anglia":0.1536},"2026-02":{"Edelweiss Can":0.1536,"Fox Cider Pint":0.39,"Heineken 5L Keg":0.3,"Heineken Pint":2.028,"Tiger Can":0.1536,"Tiger Pint":2.184},"2026-04":{"Tiger Pint":1.17,"Tiger Soju Can":0.3072},"2026-05":{"Fox Cider Pint":0.078,"Guinness Pint":0.312,"Heineken Pint":0.78,"Tiger Pint":1.716},"2026-06":{"Tiger Pint":1.794}},"Loud Speaker @ Setapak":{"2025-12":{"Tiger Pint":2.886,"Heineken 5L Keg":0.1,"Shandy Anglia":0.1536,"Guinness Pint":0.546,"Heineken Pint":1.404,"Edelweiss Can":0.1536,"Tiger Soju Can":0.1536,"Fox Cider Pint":0.156},"2026-01":{"Edelweiss Can":0.0768,"Tiger Pint":1.56,"Tiger Can":0.1536,"Heineken 5L Keg":0.2},"2026-02":{"Edelweiss Can":0.0768,"Fox Cider Pint":0.078,"Guinness Pint":0.234,"Heineken Pint":0.858,"Tiger Pint":1.794},"2026-03":{"Edelweiss Can":0.1536,"Guinness Pint":0.312,"Heineken Pint":0.78,"Tiger Pint":2.34,"Tiger Soju Can":0.0768},"2026-04":{"Fox Cider Pint":0.078,"Guinness Pint":0.078,"Heineken Pint":0.468,"Tiger Pint":1.17},"2026-05":{"Edelweiss Can":0.0768,"Fox Cider Pint":0.078,"Guinness Pint":0.546,"Heineken Pint":0.468,"Tiger Pint":1.404,"Tiger Soju Can":0.0768},"2026-06":{"Heineken Pint":0.234,"Tiger Pint":1.95},"2026-07":{"Tiger Pint":0.468}},"Loud Speaker @ Sri Petaling":{"2025-12":{"Edelweiss Can":0.3072,"Tiger Pint":2.106,"Heineken Pint":1.56,"Tiger Can":0.5376,"Guinness Pint":0.39,"Tiger Soju Can":0.1536,"Fox Cider Pint":0.156},"2026-01":{"Guinness Pint":0.156,"Heineken Pint":0.156,"Tiger Pint":0.702,"Edelweiss Can":0.2304},"2026-02":{"Edelweiss Can":0.1536,"Fox Cider Can":0.0768,"Fox Cider Pint":0.234,"Guinness Pint":0.39,"Heineken 5L Keg":0.05,"Heineken Pint":1.17,"Tiger Pint":2.574},"2026-03":{"Heineken Pint":0.39,"Tiger Pint":0.78,"Tiger Soju Can":0.1536},"2026-04":{"Fox Cider Pint":0.156,"Guinness Pint":0.39,"Heineken Pint":0.702,"Tiger Pint":1.95},"2026-05":{"Edelweiss Can":0.1536,"Fox Cider Pint":0.156,"Guinness Pint":0.156,"Heineken Pint":0.78,"Tiger Pint":1.95,"Tiger Soju Can":0.0768},"2026-06":{"Edelweiss Can":0.1536,"Fox Cider Pint":0.0,"Guinness Pint":0.624,"Heineken Pint":0.78,"Tiger Pint":1.716,"Tiger Soju Can":0.0},"2026-07":{"Guinness Pint":0.156,"Heineken Pint":0.936,"Tiger Pint":2.34,"Tiger Soju Can":0.0768}},"Loud Speaker @ Subang":{"2025-12":{"Tiger Can":0.384,"Shandy Anglia":0.0768,"Edelweiss Can":0.1536,"Heineken Pint":0.624,"Guinness Pint":0.39,"Tiger Pint":0.78,"Tiger Soju Can":0.1536,"Fox Cider Pint":0.156},"2026-01":{"Heineken Pint":1.17,"Tiger Pint":2.964,"Fox Cider Pint":0.156,"Edelweiss Can":0.0768,"Guinness Pint":0.234,"Heineken 5L Keg":0.3},"2026-02":{"Edelweiss Can":0.2304,"Guinness Pint":0.39,"Heineken 5L Keg":0.05,"Heineken Pint":0.39,"Tiger Pint":1.794,"Tiger Soju Can":0.1536},"2026-03":{"Edelweiss Can":0.1536,"Fox Cider Pint":0.078,"Guinness Pint":0.156,"Heineken Pint":0.468,"Tiger Pint":1.638},"2026-04":{"Edelweiss Can":0.1536,"Fox Cider Pint":0.234,"Guinness Pint":0.234,"Heineken Pint":0.702,"Tiger Pint":2.652,"Tiger Soju Can":0.0768},"2026-05":{"Edelweiss Can":0.2304,"Fox Cider Pint":0.156,"Heineken Pint":0.78,"Tiger Pint":2.574,"Tiger Soju Can":0.0768},"2026-06":{"Guinness Pint":0.312,"Heineken Pint":0.468,"Tiger Pint":2.34},"2026-07":{"Edelweiss Can":0.384,"Guinness Pint":0.468,"Heineken Pint":0.468,"Tiger Pint":2.574}},"Loud Speaker @ Sunway Carnival":{"2025-12":{"Tiger Pint":1.56,"Edelweiss Can":0.2304,"Guinness Pint":0.234,"Heineken Pint":0.78,"Tiger Soju Can":0.1536},"2026-01":{"Edelweiss Can":0.2304,"Tiger Pint":1.17,"Tiger Can":0.1536,"Tiger Soju Can":0.0768,"Heineken 5L Keg":0.1,"Shandy Anglia":0.2304,"Guinness Pint":0.078,"Heineken Pint":0.39},"2026-02":{"Guinness Pint":0.234,"Heineken Pint":0.858,"Tiger Pint":1.17},"2026-03":{"Fox Cider Pint":0.156,"Guinness Pint":0.078,"Heineken Pint":0.39,"Tiger Pint":0.39},"2026-04":{"Edelweiss Can":0.0768,"Fox Cider Pint":0.078,"Guinness Pint":0.078,"Heineken Pint":0.702,"Tiger Pint":0.78,"Tiger Soju Can":0.0},"2026-05":{"Edelweiss Can":0.1152,"Fox Cider Pint":0.156,"Guinness Pint":0.312,"Heineken Pint":0.858,"Tiger Pint":1.56},"2026-07":{"Edelweiss Can":0.0768,"Fox Cider Pint":0.078,"Guinness Pint":0.078,"Heineken Pint":0.468,"Tiger Pint":0.78}},"Loud Speaker @ Taman Sutera":{"2025-12":{"Guinness Pint":0.546,"Heineken Pint":2.106,"Tiger Pint":2.106,"Edelweiss Can":0.1536,"Tiger Soju Can":0.1536,"Fox Cider Pint":0.156},"2026-01":{"Heineken Pint":1.872,"Tiger Pint":1.56,"Tiger Soju Can":0.0768,"Shandy Anglia":0.1536,"Edelweiss Can":0.1536,"Tiger Can":0.1536,"Fox Cider Can":0.1536,"Heineken 5L Keg":0.25,"Fox Cider Pint":0.39},"2026-02":{"Edelweiss Can":0.3072,"Fox Cider Pint":0.312,"Guinness Pint":0.234,"Heineken Pint":1.638,"Tiger Pint":1.794,"Tiger Soju Can":0.2304},"2026-03":{"Edelweiss Can":0.0768,"Fox Cider Pint":0.078,"Guinness Pint":0.078,"Heineken Pint":0.468,"Tiger Pint":1.716},"2026-04":{"Edelweiss Can":0.3072,"Fox Cider Pint":0.468,"Guinness Pint":0.234,"Heineken Pint":1.014,"Tiger Pint":1.404,"Tiger Soju Can":0.3072},"2026-05":{"Edelweiss Can":0.1536,"Fox Cider Pint":0.156,"Guinness Pint":0.078,"Heineken Pint":0.858,"Tiger Pint":1.404},"2026-06":{"Edelweiss Can":0.2304,"Fox Cider Pint":0.312,"Guinness Pint":0.234,"Heineken Pint":1.17,"Tiger Pint":1.716},"2026-07":{"Edelweiss Can":0.1536,"Guinness Pint":0.234,"Heineken Pint":1.092,"Tiger Pint":1.716}},"Loud Speaker @ Tropicana":{"2025-12":{"Edelweiss Can":0.3072,"Heineken Pint":1.56,"Tiger Pint":2.34,"Tiger Can":0.1536,"Tiger Soju Can":0.5376,"Shandy Anglia":0.0768,"Guinness Pint":0.78,"Fox Cider Pint":0.156},"2026-01":{"Tiger Pint":2.34,"Heineken Pint":0.39,"Heineken 5L Keg":0.2},"2026-02":{"Fox Cider Pint":0.156,"Heineken 5L Keg":0.05,"Heineken Pint":0.78,"Tiger Pint":1.95},"2026-03":{"Edelweiss Can":0.2304,"Fox Cider Pint":0.234,"Guinness Pint":0.39,"Heineken Pint":0.78,"Tiger Pint":1.95,"Tiger Soju Can":0.2304},"2026-04":{"Heineken Pint":0.39,"Tiger Pint":1.56},"2026-05":{"Edelweiss Can":0.1536,"Guinness Pint":0.39,"Heineken Pint":0.78,"Tiger Pint":1.95,"Tiger Soju Can":0.1536},"2026-06":{"Edelweiss Can":0.0768,"Fox Cider Pint":0.156,"Tiger Pint":1.56},"2026-07":{"Guinness Pint":0.234,"Heineken Pint":0.78,"Tiger Pint":1.17},"2026-08":{"Edelweiss Can":0.1536,"Tiger Pint":0.78}}};
+
+// Populate outlet month dropdown
+(function(){
+  const sel=document.getElementById('outletMonthSelect');
+  const months=new Set();
+  Object.values(OPD).forEach(om=>Object.keys(om).forEach(m=>months.add(m)));
+  [...months].sort().forEach(mk=>{
+    const d=new Date(mk+'-01');
+    const lb=d.toLocaleDateString('en-MY',{month:'long',year:'numeric'});
+    const opt=document.createElement('option');
+    opt.value=mk;opt.textContent=lb;
+    sel.appendChild(opt);
+  });
+})();
+
+function getOutletData(monthKey){
+  // Returns { outlet: { product: hl } }
+  const result={};
+  Object.entries(OPD).forEach(([outlet,months])=>{
+    const prods={};
+    const mkeys=monthKey==='ALL'?Object.keys(months):[monthKey];
+    mkeys.forEach(mk=>{
+      if(!months[mk])return;
+      Object.entries(months[mk]).forEach(([p,hl])=>{
+        prods[p]=(prods[p]||0)+hl;
+      });
+    });
+    const tot=Object.values(prods).reduce((a,b)=>a+b,0);
+    if(tot>0)result[outlet]={prods,tot};
+  });
+  return result;
+}
+
+function renderOutletPage(){
+  const mk=document.getElementById('outletMonthSelect').value;
+  const data=getOutletData(mk);
+  const outlets=Object.keys(data).sort((a,b)=>data[b].tot-data[a].tot);
+  const grandTotal=outlets.reduce((s,o)=>s+data[o].tot,0);
+
+  let period=mk==='ALL'?'Dec 2025 – Aug 2026':new Date(mk+'-01').toLocaleDateString('en-MY',{month:'long',year:'numeric'});
+  const title=mk==='ALL'?'All Months':period;
+
+  document.getElementById('o2total').textContent=fm(grandTotal)+' HL';
+  document.getElementById('o2period').textContent=period;
+  document.getElementById('o2count').textContent=outlets.length;
+  if(outlets.length>0){
+    document.getElementById('o2top').textContent=SHORTCODE[outlets[0]]||outlets[0].replace('Loud Speaker @ ','LS @ ');
+    document.getElementById('o2tophl').textContent=fm(data[outlets[0]].tot)+' HL';
+    const bot=outlets[outlets.length-1];
+    document.getElementById('o2bot').textContent=SHORTCODE[bot]||bot.replace('Loud Speaker @ ','LS @ ');
+    document.getElementById('o2bothl').textContent=fm(data[bot].tot)+' HL';
+  }
+  document.getElementById('o2tableTitle').textContent='Outlet × Product Breakdown — '+title;
+
+  // Collect all products that appear
+  const prodSet=new Set();
+  outlets.forEach(o=>Object.keys(data[o].prods).forEach(p=>prodSet.add(p)));
+  // Sort products by total HL desc
+  const prods=[...prodSet].sort((a,b)=>{
+    const ta=outlets.reduce((s,o)=>s+(data[o].prods[a]||0),0);
+    const tb=outlets.reduce((s,o)=>s+(data[o].prods[b]||0),0);
+    return tb-ta;
+  });
+
+  // Header — outlets as columns, equal widths
+  const thead=document.getElementById('o2thead');
+  const shortNames=outlets.map(o=>SHORTCODE[o]||o.replace('Loud Speaker @ ','LS @ ').replace('Mini Studio @ ','MS @ '));
+  // Inject colgroup for equal column widths
+  const tbl=document.getElementById('o2table');
+  tbl.style.tableLayout='fixed';
+  tbl.style.width='100%';
+  const avail=tbl.parentElement.clientWidth||1200;
+  const colW=Math.max(72,Math.floor((avail-210)/outlets.length));
+  const colgrp=document.createElement('colgroup');
+  const scW=56;colgrp.innerHTML='<col style="width:130px">'+outlets.map(()=>`<col style="width:${scW}px">`).join('')+'<col style="width:72px">';
+  const oldCG=tbl.querySelector('colgroup');
+  if(oldCG)oldCG.remove();
+  tbl.insertBefore(colgrp,tbl.firstChild);
+  thead.innerHTML='<tr><th style="text-align:left">Product</th>'+shortNames.map((n,i)=>`<th style="text-align:center;font-weight:700;font-size:11px;letter-spacing:.5px" title="${outlets[i]}">${n}</th>`).join('')+'<th style="color:#2563eb;text-align:right">Total HL</th></tr>';
+
+  // Body — products as rows
+  const tbody=document.getElementById('o2tbody');
+  tbody.innerHTML='';
+  prods.forEach(p=>{
+    const rowTotal=outlets.reduce((s,o)=>s+(data[o].prods[p]||0),0);
+    if(rowTotal===0)return;
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td style="font-weight:600;white-space:nowrap;color:#1e293b">${p}</td>`+
+      outlets.map(o=>{
+        const v=data[o].prods[p]||0;
+        return v>0?`<td style="color:#1e293b;text-align:right">${fm(v)}</td>`:`<td style="color:#cbd5e0;text-align:center">—</td>`;
+      }).join('')+
+      `<td style="color:#2563eb;font-weight:700;text-align:right">${fm(rowTotal)}</td>`;
+    tbody.appendChild(tr);
+  });
+
+  // Footer — column totals + % contribution
+  const tfoot=document.getElementById('o2tfoot');
+  tfoot.innerHTML=`<tr style="border-top:2px solid #e2e8f0;font-weight:700;background:#f8fafc">
+    <td style="color:#374151;padding:10px 12px;font-weight:700">TOTAL HL</td>
+    ${outlets.map(o=>`<td style="padding:10px 12px;color:#374151;font-weight:700;text-align:right">${fm(data[o].tot)}</td>`).join('')}
+    <td style="padding:10px 12px;color:#2563eb;font-weight:700">${fm(grandTotal)}</td>
+  </tr>
+  <tr style="background:#eff6ff">
+    <td style="color:#64748b;padding:8px 12px;font-size:11px;font-weight:600;letter-spacing:.4px;text-align:left">% OF TOTAL</td>
+    ${outlets.map(o=>{const pct=grandTotal>0?data[o].tot/grandTotal*100:0;return `<td style="padding:8px 12px;color:#2563eb;font-size:11px;font-weight:600;text-align:right">${fm(pct,1)}%</td>`;}).join('')}
+    <td style="padding:8px 12px;color:#2563eb;font-size:11px;font-weight:600">100%</td>
+  </tr>`;
+}
+
+renderOutletPage();
+
+// ─── CARLSBERG DATA ─────────────────────────────────────────────
+const CMD={"2024-01": 62.2918, "2024-02": 56.5528, "2024-03": 66.751, "2024-04": 46.03, "2024-05": 47.542, "2024-06": 59.8376, "2024-07": 66.7752, "2024-08": 59.5372, "2024-09": 56.2468, "2024-10": 66.1754, "2024-11": 63.5602, "2024-12": 78.28, "2025-01": 65.5682, "2025-02": 56.2396, "2025-03": 62.3858, "2025-04": 67.7008, "2025-05": 63.4708, "2025-06": 66.417, "2025-07": 72.7198, "2025-08": 97.7646, "2025-09": 34.8066, "2025-10": 42.9028, "2025-11": 55.3266, "2025-12": 5.0544};
+const CMPD={"2024-01": {"1664 Blanc 10L Keg": 1.0, "Asahi Super Dry 10L Keg": 1.3, "Carlsberg Danish Pilsner": 40.638, "Carlsberg SD 22.7L Keg": 4.313, "Carlsberg Smooth Draught": 8.268, "Connor's 10L Keg": 0.9, "Connor's Can": 3.5328, "Somersby Apple": 2.34}, "2024-02": {"1664 Blanc 10L Keg": 0.7, "Asahi Super Dry 10L Keg": 0.8, "Carlsberg Danish Pilsner": 41.496, "Carlsberg SD 22.7L Keg": 1.362, "Carlsberg Smooth Draught": 6.864, "Connor's 10L Keg": 0.4, "Connor's Can": 3.9168, "Somersby Apple": 1.014}, "2024-03": {"1664 Blanc 10L Keg": 1.3, "Asahi Super Dry 10L Keg": 0.0, "Carlsberg Danish Pilsner": 44.538, "Carlsberg SD 22.7L Keg": 4.767, "Carlsberg Smooth Draught": 10.842, "Connor's 10L Keg": 0.6, "Connor's Can": 3.456, "Somersby Apple": 1.248}, "2024-04": {"1664 Blanc 10L Keg": 0.5, "Carlsberg Danish Pilsner": 28.236, "Carlsberg SD 22.7L Keg": 3.632, "Carlsberg Smooth Draught": 10.062, "Connor's 10L Keg": 0.9, "Connor's Can": 1.92, "Somersby Apple": 0.78}, "2024-05": {"Carlsberg Danish Pilsner": 27.066, "Carlsberg SD 22.7L Keg": 1.816, "Carlsberg Smooth Draught": 13.572, "Connor's Can": 3.84, "Somersby Apple": 1.248}, "2024-06": {"1664 Blanc 10L Keg": 0.6, "Carlsberg Danish Pilsner": 34.554, "Carlsberg SD 22.7L Keg": 2.724, "Carlsberg Smooth Draught": 15.912, "Connor's 10L Keg": 0.5, "Connor's Can": 4.3776, "Somersby Apple": 1.17}, "2024-07": {"1664 Blanc 10L Keg": 0.8, "Carlsberg Danish Pilsner": 36.894, "Carlsberg GL 22.7L Keg": 1.362, "Carlsberg Green Label Can": 0.384, "Carlsberg SD 22.7L Keg": 2.27, "Carlsberg Smooth Draught": 16.614, "Connor's 10L Keg": 0.2, "Connor's Can": 6.0672, "Somersby Apple": 2.184}, "2024-08": {"1664 Blanc 10L Keg": 0.4, "Carlsberg Danish Pilsner": 34.32, "Carlsberg GL 22.7L Keg": 2.27, "Carlsberg Smooth Draught": 15.756, "Connor's 10L Keg": 0.7, "Connor's Can": 4.5312, "Somersby Apple": 1.56}, "2024-09": {"1664 Blanc 10L Keg": 0.4, "Carlsberg Danish Pilsner": 31.746, "Carlsberg GL 22.7L Keg": 0.908, "Carlsberg Smooth Draught": 16.614, "Connor's 10L Keg": 0.4, "Connor's Can": 3.9168, "Somersby Apple": 2.262}, "2024-10": {"1664 Blanc 10L Keg": 0.6, "Carlsberg Danish Pilsner": 34.788, "Carlsberg GL 22.7L Keg": 2.497, "Carlsberg Smooth Draught": 19.5, "Connor's 10L Keg": 1.0, "Connor's Can": 5.6064, "Somersby Apple": 2.184}, "2024-11": {"1664 Blanc 10L Keg": 0.5, "Carlsberg Danish Pilsner": 39.78, "Carlsberg GL 22.7L Keg": 1.135, "Carlsberg Smooth Draught": 14.274, "Connor's 10L Keg": 0.7, "Connor's Can": 5.2992, "Somersby Apple": 1.872}, "2024-12": {"1664 Blanc 10L Keg": 1.0, "Carlsberg Danish Pilsner": 42.978, "Carlsberg GL 22.7L Keg": 2.27, "Carlsberg Smooth Draught": 22.62, "Connor's 10L Keg": 1.0, "Connor's Can": 5.76, "Somersby Apple": 2.652}, "2025-01": {"1664 Blanc 10L Keg": 0.4, "Carlsberg Danish Pilsner": 38.844, "Carlsberg GL 22.7L Keg": 1.135, "Carlsberg Smooth Draught": 18.174, "Connor's Can": 5.2992, "Somersby Apple": 1.716}, "2025-02": {"1664 Blanc 10L Keg": 0.1, "Carlsberg Danish Pilsner": 27.456, "Carlsberg GL 22.7L Keg": 2.27, "Carlsberg Smooth Draught": 17.55, "Connor's 10L Keg": 1.0, "Connor's Can": 5.9136, "Somersby Apple": 1.95}, "2025-03": {"1664 Blanc 10L Keg": 0.5, "Carlsberg Danish Pilsner": 33.618, "Carlsberg GL 22.7L Keg": 2.497, "Carlsberg Smooth Draught": 18.408, "Connor's 10L Keg": 0.5, "Connor's Can": 5.0688, "Somersby Apple": 1.794}, "2025-04": {"1664 Blanc 10L Keg": 0.7, "Carlsberg Danish Pilsner": 36.504, "Carlsberg GL 22.7L Keg": 2.27, "Carlsberg Smooth Draught": 19.5, "Connor's 10L Keg": 0.4, "Connor's Can": 6.2208, "Somersby Apple": 2.106}, "2025-05": {"1664 Blanc 10L Keg": 0.6, "Carlsberg Danish Pilsner": 33.618, "Carlsberg GL 22.7L Keg": 0.908, "Carlsberg Smooth Draught": 20.046, "Connor's 10L Keg": 0.2, "Connor's Can": 5.8368, "Somersby Apple": 2.262}, "2025-06": {"1664 Blanc 10L Keg": 0.3, "Carlsberg Danish Pilsner": 36.738, "Carlsberg GL 22.7L Keg": 1.135, "Carlsberg Smooth Draught": 18.72, "Connor's 10L Keg": 0.5, "Connor's Can": 6.528, "Somersby Apple": 2.496}, "2025-07": {"1664 Blanc 10L Keg": 0.9, "Carlsberg Danish Pilsner": 37.83, "Carlsberg GL 22.7L Keg": 2.043, "Carlsberg Smooth Draught": 22.776, "Connor's 10L Keg": 1.0, "Connor's Can": 6.2208, "Somersby Apple": 1.95}, "2025-08": {"1664 Blanc 10L Keg": 0.9, "Carlsberg Danish Pilsner": 50.31, "Carlsberg GL 22.7L Keg": 1.135, "Carlsberg Smooth Draught": 29.952, "Connor's 10L Keg": 0.2, "Connor's Can": 11.2896, "Somersby Apple": 3.978}, "2025-09": {"1664 Blanc 10L Keg": 0.5, "Carlsberg Danish Pilsner": 19.578, "Carlsberg GL 22.7L Keg": 1.589, "Carlsberg Smooth Draught": 7.41, "Connor's 10L Keg": 0.8, "Connor's Can": 3.9936, "Somersby Apple": 0.936}, "2025-10": {"1664 Blanc 10L Keg": 0.2, "Carlsberg Danish Pilsner": 22.23, "Carlsberg GL 22.7L Keg": 1.816, "Carlsberg Smooth Draught": 12.324, "Connor's 10L Keg": 0.7, "Connor's Can": 3.9168, "Somersby Apple": 1.716}, "2025-11": {"1664 Blanc 10L Keg": 0.8, "Carlsberg Danish Pilsner": 30.108, "Carlsberg GL 22.7L Keg": 1.135, "Carlsberg Smooth Draught": 15.678, "Connor's 10L Keg": 0.9, "Connor's Can": 5.1456, "Somersby Apple": 1.56}, "2025-12": {"1664 Blanc 10L Keg": 0.3, "Carlsberg Danish Pilsner": 1.95, "Carlsberg Smooth Draught": 2.184, "Connor's Can": 0.2304, "Somersby Apple": 0.39}};
+const COPD={"Loud Speaker @ Ampang": {"2024-06": {"Carlsberg Danish Pilsner": 0.39}, "2024-07": {"Carlsberg Danish Pilsner": 0.78}, "2024-08": {"Carlsberg Danish Pilsner": 0.78}, "2024-09": {"Carlsberg Danish Pilsner": 0.78}, "2024-10": {"Carlsberg Danish Pilsner": 0.39}, "2024-11": {"Carlsberg Danish Pilsner": 0.39}, "2024-12": {"Carlsberg Danish Pilsner": 0.78}, "2025-01": {"Carlsberg Danish Pilsner": 0.39}, "2025-02": {"Carlsberg Danish Pilsner": 0.39}, "2025-03": {"Carlsberg Danish Pilsner": 0.39}, "2025-04": {"Carlsberg Danish Pilsner": 0.39}, "2025-05": {"Carlsberg Danish Pilsner": 0.39}, "2025-06": {"Carlsberg Danish Pilsner": 0.936}, "2025-07": {"Carlsberg Danish Pilsner": 0.546}, "2025-08": {"Carlsberg Danish Pilsner": 0.78}, "2025-10": {"Carlsberg Danish Pilsner": 0.39}, "2025-11": {"Carlsberg Danish Pilsner": 0.624}}, "Loud Speaker @ C180": {"2024-01": {"Carlsberg Danish Pilsner": 1.56, "Somersby Apple": 0.078}, "2024-02": {"Carlsberg Danish Pilsner": 5.85, "Carlsberg Smooth Draught": 0.39, "Connor's Can": 1.2288, "Somersby Apple": 0.078}, "2024-03": {"Carlsberg Danish Pilsner": 5.85, "Carlsberg Smooth Draught": 1.17, "Connor's Can": 0.768, "Somersby Apple": 0.156}, "2024-04": {"Carlsberg Danish Pilsner": 2.574, "Carlsberg Smooth Draught": 0.156, "Connor's Can": 0.2304, "Somersby Apple": 0.156}, "2024-05": {"Carlsberg Danish Pilsner": 1.17, "Carlsberg Smooth Draught": 1.17, "Connor's Can": 0.1536}, "2024-06": {"Carlsberg Danish Pilsner": 3.51, "Carlsberg Smooth Draught": 1.17, "Connor's Can": 0.6912}, "2024-07": {"Carlsberg Danish Pilsner": 2.73, "Carlsberg Smooth Draught": 1.95, "Connor's Can": 0.9216}, "2024-08": {"Carlsberg Danish Pilsner": 2.574, "Carlsberg Smooth Draught": 1.95, "Connor's Can": 1.0752}, "2024-09": {"Carlsberg Danish Pilsner": 2.34, "Carlsberg Smooth Draught": 1.872, "Connor's Can": 0.9216, "Somersby Apple": 0.156}, "2024-10": {"Carlsberg Danish Pilsner": 4.056, "Carlsberg Smooth Draught": 2.886, "Connor's Can": 1.6128, "Somersby Apple": 0.078}, "2024-11": {"Carlsberg Danish Pilsner": 3.12, "Carlsberg Smooth Draught": 1.092, "Connor's Can": 0.6144, "Somersby Apple": 0.078}, "2024-12": {"Carlsberg Danish Pilsner": 4.524, "Carlsberg Smooth Draught": 2.73, "Connor's Can": 0.6912, "Somersby Apple": 0.156}, "2025-01": {"Carlsberg Danish Pilsner": 3.744, "Carlsberg Smooth Draught": 1.56, "Connor's Can": 1.152, "Somersby Apple": 0.156}, "2025-02": {"Carlsberg Danish Pilsner": 3.12, "Carlsberg Smooth Draught": 2.028, "Connor's Can": 0.6144, "Somersby Apple": 0.156}, "2025-03": {"Carlsberg Danish Pilsner": 1.014, "Carlsberg Smooth Draught": 0.78, "Connor's Can": 0.4608, "Somersby Apple": 0.156}, "2025-04": {"Carlsberg Danish Pilsner": 2.028, "Carlsberg Smooth Draught": 1.404, "Connor's Can": 0.8448}, "2025-05": {"Carlsberg Danish Pilsner": 2.496, "Carlsberg Smooth Draught": 1.794, "Connor's Can": 0.768}, "2025-06": {"Carlsberg Danish Pilsner": 2.73, "Carlsberg Smooth Draught": 2.106, "Connor's Can": 1.152, "Somersby Apple": 0.156}, "2025-07": {"Carlsberg Danish Pilsner": 2.496, "Carlsberg Smooth Draught": 1.872, "Connor's Can": 0.6912, "Somersby Apple": 0.078}, "2025-08": {"Carlsberg Danish Pilsner": 3.9, "Carlsberg Smooth Draught": 3.12, "Connor's Can": 1.3056, "Somersby Apple": 0.078}, "2025-09": {"Carlsberg Danish Pilsner": 1.17, "Somersby Apple": 0.078}, "2025-10": {"Carlsberg Danish Pilsner": 1.95, "Carlsberg Smooth Draught": 0.78, "Connor's Can": 0.384, "Somersby Apple": 0.156}, "2025-11": {"Carlsberg Danish Pilsner": 2.184, "Carlsberg Smooth Draught": 1.404, "Connor's Can": 0.9984, "Somersby Apple": 0.078}, "2025-12": {"Carlsberg Danish Pilsner": 0.156, "Carlsberg Smooth Draught": 0.234}}, "Loud Speaker @ Georgetown": {"2024-01": {"Carlsberg Danish Pilsner": 4.68, "Carlsberg Smooth Draught": 1.95, "Connor's Can": 0.768, "Somersby Apple": 0.624}, "2024-02": {"Carlsberg Danish Pilsner": 3.9, "Carlsberg Smooth Draught": 0.78}, "2024-03": {"Carlsberg Danish Pilsner": 7.02, "Carlsberg Smooth Draught": 3.12, "Connor's Can": 0.768}, "2024-04": {"Connor's Can": 0.1536, "Somersby Apple": 0.234}, "2024-05": {"Carlsberg Danish Pilsner": 2.652, "Carlsberg Smooth Draught": 0.156, "Connor's Can": 0.4608, "Somersby Apple": 0.078}, "2024-06": {"Carlsberg Danish Pilsner": 3.588, "Carlsberg Smooth Draught": 1.248, "Connor's Can": 0.4608, "Somersby Apple": 0.156}, "2024-07": {"Carlsberg Danish Pilsner": 4.29, "Carlsberg Smooth Draught": 1.482, "Connor's Can": 0.6144, "Somersby Apple": 0.312}, "2024-08": {"Carlsberg Danish Pilsner": 3.51, "Carlsberg Smooth Draught": 1.17, "Connor's Can": 0.384, "Somersby Apple": 0.234}, "2024-09": {"Carlsberg Danish Pilsner": 3.12, "Carlsberg Smooth Draught": 1.482, "Connor's Can": 0.384, "Somersby Apple": 0.234}, "2024-10": {"Carlsberg Danish Pilsner": 3.12, "Carlsberg Smooth Draught": 1.248, "Connor's Can": 0.384, "Somersby Apple": 0.156}, "2024-11": {"Carlsberg Danish Pilsner": 2.73, "Carlsberg Smooth Draught": 0.936, "Connor's Can": 0.5376, "Somersby Apple": 0.312}, "2024-12": {"Carlsberg Danish Pilsner": 3.198, "Carlsberg Smooth Draught": 1.56, "Connor's Can": 0.768, "Somersby Apple": 0.312}, "2025-01": {"Carlsberg Danish Pilsner": 3.51, "Carlsberg Smooth Draught": 1.56, "Connor's Can": 0.384, "Somersby Apple": 0.312}, "2025-02": {"Carlsberg Danish Pilsner": 2.34, "Carlsberg Smooth Draught": 1.248, "Connor's Can": 0.768}, "2025-03": {"Carlsberg Danish Pilsner": 2.34, "Carlsberg Smooth Draught": 1.56, "Connor's Can": 0.4608, "Somersby Apple": 0.39}, "2025-04": {"Carlsberg Danish Pilsner": 3.12, "Carlsberg Smooth Draught": 1.248, "Connor's Can": 0.2304, "Somersby Apple": 0.078}, "2025-05": {"Carlsberg Danish Pilsner": 2.73, "Carlsberg Smooth Draught": 1.56, "Connor's Can": 0.2304, "Somersby Apple": 0.156}, "2025-06": {"Carlsberg Danish Pilsner": 2.964, "Carlsberg Smooth Draught": 1.17, "Connor's Can": 0.6912, "Somersby Apple": 0.312}, "2025-07": {"Carlsberg Danish Pilsner": 2.73, "Carlsberg Smooth Draught": 1.56, "Connor's Can": 0.384, "Somersby Apple": 0.156}, "2025-08": {"Carlsberg Danish Pilsner": 4.68, "Carlsberg Smooth Draught": 2.73, "Connor's Can": 1.152, "Somersby Apple": 0.468}, "2025-10": {"Carlsberg Danish Pilsner": 1.56, "Carlsberg Smooth Draught": 0.78}, "2025-11": {"Carlsberg Danish Pilsner": 1.56, "Carlsberg Smooth Draught": 0.39, "Connor's Can": 0.1536, "Somersby Apple": 0.156}, "2025-12": {"Carlsberg Danish Pilsner": 0.78, "Carlsberg Smooth Draught": 0.78, "Somersby Apple": 0.156}}, "Loud Speaker @ Kepong": {"2024-01": {"Carlsberg Danish Pilsner": 1.56, "Carlsberg Smooth Draught": 0.234, "Connor's Can": 0.2304, "Somersby Apple": 0.078}, "2024-02": {"Carlsberg Danish Pilsner": 2.73, "Connor's Can": 0.2304}, "2024-03": {"Carlsberg Danish Pilsner": 1.56, "Carlsberg Smooth Draught": 0.624, "Connor's Can": 0.1536, "Somersby Apple": 0.078}, "2025-02": {"Carlsberg Danish Pilsner": 3.51, "Carlsberg Smooth Draught": 1.872, "Connor's Can": 1.3056, "Somersby Apple": 0.312}, "2025-03": {"Carlsberg Danish Pilsner": 9.36, "Carlsberg Smooth Draught": 5.07, "Connor's Can": 1.6896, "Somersby Apple": 0.39}, "2025-04": {"Carlsberg Danish Pilsner": 7.488, "Carlsberg Smooth Draught": 4.446, "Connor's Can": 2.3808, "Somersby Apple": 0.312}, "2025-05": {"Carlsberg Danish Pilsner": 6.396, "Carlsberg Smooth Draught": 4.602, "Connor's Can": 1.7664, "Somersby Apple": 0.234}, "2025-06": {"Carlsberg Danish Pilsner": 8.19, "Carlsberg Smooth Draught": 3.432, "Connor's Can": 1.7664, "Somersby Apple": 0.312}, "2025-07": {"Carlsberg Danish Pilsner": 6.942, "Carlsberg Smooth Draught": 4.29, "Connor's 10L Keg": 0.6, "Connor's Can": 1.92, "Somersby Apple": 0.156}, "2025-08": {"Carlsberg Danish Pilsner": 7.8, "Carlsberg Smooth Draught": 4.29, "Connor's Can": 2.1504, "Somersby Apple": 0.156}, "2025-09": {"Carlsberg Danish Pilsner": 6.786, "Carlsberg Smooth Draught": 2.808, "Connor's Can": 2.3808}, "2025-10": {"Carlsberg Danish Pilsner": 3.9, "Carlsberg Smooth Draught": 3.12, "Connor's Can": 1.3056, "Somersby Apple": 0.078}, "2025-11": {"Carlsberg Danish Pilsner": 7.8, "Carlsberg Smooth Draught": 5.46, "Connor's Can": 2.4576, "Somersby Apple": 0.234}}, "Loud Speaker @ Lowyat": {"2024-01": {"1664 Blanc 10L Keg": 1.0, "Asahi Super Dry 10L Keg": 1.3, "Carlsberg Danish Pilsner": 3.51, "Carlsberg SD 22.7L Keg": 4.313, "Carlsberg Smooth Draught": 0.0, "Connor's 10L Keg": 0.9, "Somersby Apple": 0.312}, "2024-02": {"1664 Blanc 10L Keg": 0.7, "Asahi Super Dry 10L Keg": 0.8, "Carlsberg Danish Pilsner": 1.56, "Carlsberg SD 22.7L Keg": 1.362, "Connor's 10L Keg": 0.4, "Somersby Apple": 0.234}, "2024-03": {"1664 Blanc 10L Keg": 1.3, "Asahi Super Dry 10L Keg": 0.0, "Carlsberg Danish Pilsner": 1.56, "Carlsberg SD 22.7L Keg": 4.767, "Connor's 10L Keg": 0.6, "Somersby Apple": 0.156}, "2024-04": {"1664 Blanc 10L Keg": 0.5, "Carlsberg Danish Pilsner": 6.24, "Carlsberg SD 22.7L Keg": 3.632, "Connor's 10L Keg": 0.9}, "2024-05": {"Carlsberg Danish Pilsner": 3.12, "Carlsberg SD 22.7L Keg": 1.816, "Somersby Apple": 0.156}, "2024-06": {"1664 Blanc 10L Keg": 0.6, "Carlsberg Danish Pilsner": 7.41, "Carlsberg SD 22.7L Keg": 2.724, "Connor's 10L Keg": 0.5}, "2024-07": {"1664 Blanc 10L Keg": 0.8, "Carlsberg Danish Pilsner": 4.68, "Carlsberg GL 22.7L Keg": 1.362, "Carlsberg SD 22.7L Keg": 2.27, "Connor's 10L Keg": 0.2, "Somersby Apple": 0.312}, "2024-08": {"1664 Blanc 10L Keg": 0.4, "Carlsberg Danish Pilsner": 3.9, "Carlsberg GL 22.7L Keg": 2.27, "Connor's 10L Keg": 0.7, "Somersby Apple": 0.156}, "2024-09": {"1664 Blanc 10L Keg": 0.4, "Carlsberg Danish Pilsner": 3.666, "Carlsberg GL 22.7L Keg": 0.908, "Connor's 10L Keg": 0.4, "Somersby Apple": 0.468}, "2024-10": {"1664 Blanc 10L Keg": 0.6, "Carlsberg Danish Pilsner": 4.68, "Carlsberg GL 22.7L Keg": 2.497, "Connor's 10L Keg": 1.0, "Somersby Apple": 0.468}, "2024-11": {"1664 Blanc 10L Keg": 0.5, "Carlsberg Danish Pilsner": 6.24, "Carlsberg GL 22.7L Keg": 1.135, "Connor's 10L Keg": 0.7}, "2024-12": {"1664 Blanc 10L Keg": 1.0, "Carlsberg Danish Pilsner": 7.722, "Carlsberg GL 22.7L Keg": 2.27, "Connor's 10L Keg": 1.0}, "2025-01": {"1664 Blanc 10L Keg": 0.4, "Carlsberg Danish Pilsner": 6.084, "Carlsberg GL 22.7L Keg": 1.135, "Somersby Apple": 0.078}, "2025-02": {"1664 Blanc 10L Keg": 0.1, "Carlsberg Danish Pilsner": 3.9, "Carlsberg GL 22.7L Keg": 2.27, "Connor's 10L Keg": 1.0, "Somersby Apple": 0.156}, "2025-03": {"1664 Blanc 10L Keg": 0.5, "Carlsberg Danish Pilsner": 4.68, "Carlsberg GL 22.7L Keg": 2.497, "Connor's 10L Keg": 0.5, "Somersby Apple": 0.156}, "2025-04": {"1664 Blanc 10L Keg": 0.7, "Carlsberg Danish Pilsner": 6.942, "Carlsberg GL 22.7L Keg": 2.27, "Connor's 10L Keg": 0.4, "Somersby Apple": 0.078}, "2025-05": {"1664 Blanc 10L Keg": 0.6, "Carlsberg Danish Pilsner": 3.9, "Carlsberg GL 22.7L Keg": 0.908, "Connor's 10L Keg": 0.2, "Somersby Apple": 0.156}, "2025-06": {"1664 Blanc 10L Keg": 0.3, "Carlsberg Danish Pilsner": 3.9, "Carlsberg GL 22.7L Keg": 1.135, "Connor's 10L Keg": 0.5, "Somersby Apple": 0.078}, "2025-07": {"1664 Blanc 10L Keg": 0.9, "Carlsberg Danish Pilsner": 6.63, "Carlsberg GL 22.7L Keg": 2.043, "Connor's 10L Keg": 0.4, "Somersby Apple": 0.156}, "2025-08": {"1664 Blanc 10L Keg": 0.9, "Carlsberg Danish Pilsner": 6.708, "Carlsberg GL 22.7L Keg": 1.135, "Connor's 10L Keg": 0.2, "Somersby Apple": 0.234}, "2025-09": {"1664 Blanc 10L Keg": 0.5, "Carlsberg Danish Pilsner": 3.12, "Carlsberg GL 22.7L Keg": 1.589, "Connor's 10L Keg": 0.8, "Somersby Apple": 0.078}, "2025-10": {"1664 Blanc 10L Keg": 0.2, "Carlsberg Danish Pilsner": 2.34, "Carlsberg GL 22.7L Keg": 1.816, "Connor's 10L Keg": 0.7, "Somersby Apple": 0.234}, "2025-11": {"1664 Blanc 10L Keg": 0.8, "Carlsberg Danish Pilsner": 4.29, "Carlsberg GL 22.7L Keg": 1.135, "Connor's 10L Keg": 0.9, "Somersby Apple": 0.078}, "2025-12": {"1664 Blanc 10L Keg": 0.3}}, "Loud Speaker @ Mount Austin": {"2024-01": {"Carlsberg Danish Pilsner": 4.524, "Carlsberg Smooth Draught": 1.014, "Connor's Can": 0.4608, "Somersby Apple": 0.234}, "2024-02": {"Carlsberg Danish Pilsner": 6.396, "Carlsberg Smooth Draught": 1.794, "Connor's Can": 0.9216, "Somersby Apple": 0.312}, "2024-03": {"Carlsberg Danish Pilsner": 7.8, "Carlsberg Smooth Draught": 0.936, "Connor's Can": 0.768, "Somersby Apple": 0.156}, "2024-04": {"Carlsberg Danish Pilsner": 6.474, "Carlsberg Smooth Draught": 3.666, "Connor's Can": 0.6144, "Somersby Apple": 0.156}, "2024-05": {"Carlsberg Danish Pilsner": 5.85, "Carlsberg Smooth Draught": 2.184, "Connor's Can": 1.3824, "Somersby Apple": 0.312}, "2024-06": {"Carlsberg Danish Pilsner": 4.68, "Carlsberg Smooth Draught": 3.51, "Connor's Can": 0.8448, "Somersby Apple": 0.39}, "2024-07": {"Carlsberg Danish Pilsner": 4.836, "Carlsberg Smooth Draught": 3.51, "Connor's Can": 0.6912, "Somersby Apple": 0.39}, "2024-08": {"Carlsberg Danish Pilsner": 6.396, "Carlsberg Smooth Draught": 2.652, "Connor's Can": 0.9216, "Somersby Apple": 0.624}, "2024-09": {"Carlsberg Danish Pilsner": 5.616, "Carlsberg Smooth Draught": 3.744, "Connor's Can": 0.6144, "Somersby Apple": 0.39}, "2024-10": {"Carlsberg Danish Pilsner": 6.006, "Carlsberg Smooth Draught": 3.978, "Connor's Can": 0.9216, "Somersby Apple": 0.39}, "2024-11": {"Carlsberg Danish Pilsner": 3.9, "Carlsberg Smooth Draught": 3.666, "Connor's Can": 0.9216, "Somersby Apple": 0.468}, "2024-12": {"Carlsberg Danish Pilsner": 7.098, "Carlsberg Smooth Draught": 4.992, "Connor's Can": 0.8448, "Somersby Apple": 0.39}, "2025-01": {"Carlsberg Danish Pilsner": 4.68, "Carlsberg Smooth Draught": 2.496, "Connor's Can": 0.384, "Somersby Apple": 0.312}, "2025-02": {"Carlsberg Danish Pilsner": 2.262, "Carlsberg Smooth Draught": 2.34, "Connor's Can": 0.5376, "Somersby Apple": 0.39}, "2025-03": {"Carlsberg Danish Pilsner": 2.808, "Carlsberg Smooth Draught": 2.73, "Connor's Can": 0.768, "Somersby Apple": 0.312}, "2025-04": {"Carlsberg Danish Pilsner": 4.134, "Carlsberg Smooth Draught": 3.276, "Connor's Can": 0.768, "Somersby Apple": 0.39}, "2025-05": {"Carlsberg Danish Pilsner": 3.12, "Carlsberg Smooth Draught": 2.808, "Connor's Can": 0.6144, "Somersby Apple": 0.312}, "2025-06": {"Carlsberg Danish Pilsner": 2.964, "Carlsberg Smooth Draught": 2.808, "Connor's Can": 0.6912, "Somersby Apple": 0.312}, "2025-07": {"Carlsberg Danish Pilsner": 3.822, "Carlsberg Smooth Draught": 3.354, "Connor's Can": 0.1536, "Somersby Apple": 0.156}, "2025-08": {"Carlsberg Danish Pilsner": 4.758, "Carlsberg Smooth Draught": 2.886, "Connor's Can": 0.6144, "Somersby Apple": 0.702}, "2025-09": {"Carlsberg Danish Pilsner": 2.73, "Carlsberg Smooth Draught": 2.106, "Connor's Can": 0.6144, "Somersby Apple": 0.312}, "2025-10": {"Carlsberg Danish Pilsner": 1.56, "Carlsberg Smooth Draught": 0.78, "Connor's Can": 0.384, "Somersby Apple": 0.234}, "2025-11": {"Carlsberg Danish Pilsner": 3.666, "Carlsberg Smooth Draught": 1.716, "Connor's Can": 0.4608, "Somersby Apple": 0.234}, "2025-12": {"Carlsberg Danish Pilsner": 0.39, "Carlsberg Smooth Draught": 0.234, "Connor's Can": 0.0768, "Somersby Apple": 0.078}}, "Loud Speaker @ Mytown": {"2024-01": {"Carlsberg Danish Pilsner": 1.56, "Carlsberg Smooth Draught": 0.234, "Connor's Can": 0.1536}, "2024-02": {"Carlsberg Danish Pilsner": 1.716, "Carlsberg Smooth Draught": 0.312}, "2024-03": {"Carlsberg Danish Pilsner": 1.794, "Carlsberg Smooth Draught": 0.78, "Connor's Can": 0.2304, "Somersby Apple": 0.078}, "2024-05": {"Carlsberg Danish Pilsner": 1.014, "Carlsberg Smooth Draught": 0.624}, "2024-06": {"Carlsberg Danish Pilsner": 0.702, "Carlsberg Smooth Draught": 0.234, "Connor's Can": 0.1536, "Somersby Apple": 0.078}, "2024-07": {"Carlsberg Danish Pilsner": 1.56, "Carlsberg Smooth Draught": 0.936, "Connor's Can": 0.384, "Somersby Apple": 0.078}, "2024-08": {"Carlsberg Danish Pilsner": 1.17, "Carlsberg Smooth Draught": 0.78, "Connor's Can": 0.1536}, "2024-09": {"Carlsberg Danish Pilsner": 0.39, "Carlsberg Smooth Draught": 0.39, "Somersby Apple": 0.156}, "2024-10": {"Carlsberg Danish Pilsner": 0.78, "Carlsberg Smooth Draught": 0.39, "Connor's Can": 0.1536}, "2024-11": {"Carlsberg Danish Pilsner": 1.482, "Carlsberg Smooth Draught": 0.0}, "2024-12": {"Carlsberg Danish Pilsner": 0.78, "Carlsberg Smooth Draught": 0.936, "Connor's Can": 0.2304}, "2025-01": {"Carlsberg Danish Pilsner": 0.78, "Carlsberg Smooth Draught": 0.546, "Connor's Can": 0.1536}, "2025-02": {"Carlsberg Danish Pilsner": 0.546, "Carlsberg Smooth Draught": 0.546, "Somersby Apple": 0.078}, "2025-03": {"Carlsberg Danish Pilsner": 1.716, "Carlsberg Smooth Draught": 1.014, "Connor's Can": 0.1536, "Somersby Apple": 0.078}, "2025-04": {"Carlsberg Danish Pilsner": 0.78, "Carlsberg Smooth Draught": 0.39, "Connor's Can": 0.0768, "Somersby Apple": 0.078}, "2025-05": {"Carlsberg Danish Pilsner": 0.78, "Carlsberg Smooth Draught": 0.39, "Connor's Can": 0.2304}, "2025-06": {"Carlsberg Danish Pilsner": 0.78, "Carlsberg Smooth Draught": 0.156, "Connor's Can": 0.1536, "Somersby Apple": 0.078}, "2025-07": {"Carlsberg Danish Pilsner": 1.092, "Carlsberg Smooth Draught": 0.858, "Connor's Can": 0.1536, "Somersby Apple": 0.078}, "2025-08": {"Carlsberg Danish Pilsner": 0.234, "Carlsberg Smooth Draught": 0.312, "Connor's Can": 0.0768, "Somersby Apple": 0.078}, "2025-09": {"Carlsberg Danish Pilsner": 1.17, "Carlsberg Smooth Draught": 0.78, "Connor's Can": 0.384, "Somersby Apple": 0.156}, "2025-10": {"Carlsberg Danish Pilsner": 0.624, "Carlsberg Smooth Draught": 0.78, "Connor's Can": 0.2304}, "2025-11": {"Carlsberg Danish Pilsner": 0.624, "Carlsberg Smooth Draught": 0.546, "Connor's Can": 0.0768}, "2025-12": {"Carlsberg Danish Pilsner": 0.156, "Carlsberg Smooth Draught": 0.156, "Somersby Apple": 0.078}}, "Loud Speaker @ Puchong": {"2024-01": {"Carlsberg Danish Pilsner": 1.716, "Carlsberg Smooth Draught": 0.39, "Connor's Can": 0.3072, "Somersby Apple": 0.156}, "2024-02": {"Carlsberg Danish Pilsner": 3.12, "Carlsberg Smooth Draught": 0.624, "Connor's Can": 0.384}, "2024-03": {"Carlsberg Danish Pilsner": 0.624, "Carlsberg Smooth Draught": 0.39, "Somersby Apple": 0.156}, "2024-04": {"Carlsberg Danish Pilsner": 1.56, "Carlsberg Smooth Draught": 0.78, "Connor's Can": 0.0768}, "2024-05": {"Carlsberg Danish Pilsner": 1.95, "Carlsberg Smooth Draught": 0.702, "Connor's Can": 0.384, "Somersby Apple": 0.156}, "2024-06": {"Carlsberg Danish Pilsner": 1.95, "Carlsberg Smooth Draught": 0.78, "Connor's Can": 0.3072, "Somersby Apple": 0.078}, "2024-07": {"Carlsberg Danish Pilsner": 2.106, "Carlsberg Green Label Can": 0.384, "Carlsberg Smooth Draught": 0.936, "Connor's Can": 0.3072, "Somersby Apple": 0.078}, "2024-08": {"Carlsberg Danish Pilsner": 1.716, "Carlsberg Smooth Draught": 1.17, "Connor's Can": 0.384, "Somersby Apple": 0.078}, "2024-09": {"Carlsberg Danish Pilsner": 2.34, "Carlsberg Smooth Draught": 1.17, "Connor's Can": 0.6912, "Somersby Apple": 0.078}, "2024-10": {"Carlsberg Danish Pilsner": 1.95, "Carlsberg Smooth Draught": 1.17, "Connor's Can": 0.2304, "Somersby Apple": 0.078}, "2024-11": {"Carlsberg Danish Pilsner": 2.184, "Carlsberg Smooth Draught": 0.936, "Connor's Can": 0.2304}, "2024-12": {"Carlsberg Danish Pilsner": 1.95, "Carlsberg Smooth Draught": 0.858, "Connor's Can": 0.384, "Somersby Apple": 0.156}, "2025-01": {"Carlsberg Danish Pilsner": 2.496, "Carlsberg Smooth Draught": 1.248, "Connor's Can": 0.384, "Somersby Apple": 0.078}, "2025-02": {"Carlsberg Danish Pilsner": 1.638, "Carlsberg Smooth Draught": 1.638, "Connor's Can": 0.384, "Somersby Apple": 0.156}, "2025-03": {"Carlsberg Danish Pilsner": 1.17, "Connor's Can": 0.1536}, "2025-04": {"Carlsberg Danish Pilsner": 1.014, "Carlsberg Smooth Draught": 0.78, "Connor's Can": 0.1536, "Somersby Apple": 0.078}, "2025-05": {"Carlsberg Danish Pilsner": 1.95, "Carlsberg Smooth Draught": 1.248, "Connor's Can": 0.384, "Somersby Apple": 0.156}, "2025-06": {"Carlsberg Danish Pilsner": 1.56, "Carlsberg Smooth Draught": 0.0, "Connor's Can": 0.1536, "Somersby Apple": 0.078}, "2025-07": {"Carlsberg Danish Pilsner": 1.404, "Carlsberg Smooth Draught": 1.17, "Connor's Can": 0.4608, "Somersby Apple": 0.234}, "2025-08": {"Carlsberg Danish Pilsner": 1.17, "Carlsberg Smooth Draught": 0.78}, "2025-09": {"Carlsberg Danish Pilsner": 1.014, "Carlsberg Smooth Draught": 0.78, "Connor's Can": 0.4608, "Somersby Apple": 0.078}, "2025-10": {"Carlsberg Danish Pilsner": 1.014, "Carlsberg Smooth Draught": 0.156, "Somersby Apple": 0.078}, "2025-11": {"Carlsberg Danish Pilsner": 0.78, "Carlsberg Smooth Draught": 0.78, "Connor's Can": 0.2304, "Somersby Apple": 0.156}}, "Loud Speaker @ Setapak": {"2024-01": {"Carlsberg Danish Pilsner": 2.496, "Carlsberg Smooth Draught": 1.014, "Connor's Can": 0.2304, "Somersby Apple": 0.156}, "2024-02": {"Carlsberg Danish Pilsner": 3.12, "Carlsberg Smooth Draught": 0.624, "Connor's Can": 0.1536, "Somersby Apple": 0.078}, "2024-03": {"Carlsberg Danish Pilsner": 3.9, "Carlsberg Smooth Draught": 0.39, "Connor's Can": 0.2304, "Somersby Apple": 0.078}, "2024-04": {"Carlsberg Danish Pilsner": 3.12, "Carlsberg Smooth Draught": 1.17, "Connor's Can": 0.384, "Somersby Apple": 0.078}, "2024-05": {"Carlsberg Danish Pilsner": 0.78, "Carlsberg Smooth Draught": 0.39, "Connor's Can": 0.2304, "Somersby Apple": 0.078}, "2024-06": {"Carlsberg Danish Pilsner": 2.964, "Carlsberg Smooth Draught": 0.624, "Connor's Can": 0.4608}, "2024-07": {"Carlsberg Danish Pilsner": 3.51, "Carlsberg Smooth Draught": 0.78, "Connor's Can": 0.2304, "Somersby Apple": 0.078}, "2024-08": {"Carlsberg Danish Pilsner": 2.73, "Carlsberg Smooth Draught": 0.39, "Connor's Can": 0.3072, "Somersby Apple": 0.078}, "2024-09": {"Carlsberg Danish Pilsner": 3.12, "Carlsberg Smooth Draught": 0.624, "Somersby Apple": 0.078}, "2024-10": {"Carlsberg Danish Pilsner": 1.17, "Carlsberg Smooth Draught": 0.624, "Connor's Can": 0.4608}, "2024-11": {"Carlsberg Danish Pilsner": 3.198, "Carlsberg Smooth Draught": 0.39, "Connor's Can": 0.384, "Somersby Apple": 0.156}, "2024-12": {"Carlsberg Danish Pilsner": 2.73, "Carlsberg Smooth Draught": 0.624, "Connor's Can": 0.2304, "Somersby Apple": 0.078}, "2025-01": {"Carlsberg Danish Pilsner": 1.95, "Carlsberg Smooth Draught": 0.858, "Connor's Can": 0.2304}, "2025-02": {"Carlsberg Danish Pilsner": 2.574, "Carlsberg Smooth Draught": 1.014, "Connor's Can": 0.3072, "Somersby Apple": 0.156}, "2025-03": {"Carlsberg Danish Pilsner": 1.17, "Carlsberg Smooth Draught": 0.234, "Connor's Can": 0.0768, "Somersby Apple": 0.078}, "2025-04": {"Carlsberg Danish Pilsner": 1.56, "Carlsberg Smooth Draught": 0.78, "Connor's Can": 0.1536, "Somersby Apple": 0.078}, "2025-05": {"Carlsberg Danish Pilsner": 1.794, "Carlsberg Smooth Draught": 0.78, "Connor's Can": 0.3072, "Somersby Apple": 0.078}, "2025-06": {"Carlsberg Danish Pilsner": 2.184, "Carlsberg Smooth Draught": 0.624, "Connor's Can": 0.0768, "Somersby Apple": 0.078}, "2025-07": {"Carlsberg Danish Pilsner": 1.95, "Carlsberg Smooth Draught": 0.624, "Connor's Can": 0.4608}, "2025-08": {"Carlsberg Danish Pilsner": 2.34, "Carlsberg Smooth Draught": 1.248, "Connor's Can": 0.6144, "Somersby Apple": 0.234}, "2025-09": {"Carlsberg Danish Pilsner": 1.17, "Carlsberg Smooth Draught": 0.156}, "2025-10": {"Carlsberg Danish Pilsner": 1.17, "Carlsberg Smooth Draught": 0.624, "Connor's Can": 0.2304, "Somersby Apple": 0.234}, "2025-11": {"Carlsberg Danish Pilsner": 1.56, "Carlsberg Smooth Draught": 0.702}}, "Loud Speaker @ Sri Petaling": {"2024-01": {"Carlsberg Danish Pilsner": 6.63, "Carlsberg Smooth Draught": 1.17, "Connor's Can": 0.2304, "Somersby Apple": 0.156}, "2024-02": {"Carlsberg Danish Pilsner": 3.12, "Carlsberg Smooth Draught": 0.234, "Connor's Can": 0.1536, "Somersby Apple": 0.078}, "2024-03": {"Carlsberg Danish Pilsner": 4.29, "Carlsberg Smooth Draught": 0.858, "Connor's Can": 0.1536, "Somersby Apple": 0.078}, "2024-04": {"Carlsberg Danish Pilsner": 2.886, "Carlsberg Smooth Draught": 1.014, "Connor's Can": 0.2304}, "2024-05": {"Carlsberg Danish Pilsner": 3.9, "Carlsberg Smooth Draught": 0.702, "Connor's Can": 0.3072}, "2024-06": {"Carlsberg Danish Pilsner": 4.68, "Carlsberg Smooth Draught": 2.028, "Connor's Can": 0.5376, "Somersby Apple": 0.078}, "2024-07": {"Carlsberg Danish Pilsner": 2.106, "Carlsberg Smooth Draught": 0.936, "Connor's Can": 1.152, "Somersby Apple": 0.156}, "2024-08": {"Carlsberg Danish Pilsner": 3.51, "Carlsberg Smooth Draught": 1.638, "Connor's Can": 0.3072}, "2024-09": {"Carlsberg Danish Pilsner": 2.34, "Carlsberg Smooth Draught": 1.17, "Connor's Can": 0.384, "Somersby Apple": 0.078}, "2024-10": {"Carlsberg Danish Pilsner": 4.29, "Carlsberg Smooth Draught": 1.17, "Connor's Can": 0.384, "Somersby Apple": 0.078}, "2024-11": {"Carlsberg Danish Pilsner": 5.46, "Carlsberg Smooth Draught": 1.17, "Connor's Can": 0.5376}, "2024-12": {"Carlsberg Danish Pilsner": 3.12, "Carlsberg Smooth Draught": 1.17, "Connor's Can": 0.6912, "Somersby Apple": 0.156}, "2025-01": {"Carlsberg Danish Pilsner": 3.9, "Carlsberg Smooth Draught": 0.78, "Connor's Can": 0.6912}, "2025-02": {"Carlsberg Danish Pilsner": 2.34, "Carlsberg Smooth Draught": 1.56, "Connor's Can": 0.768, "Somersby Apple": 0.234}, "2025-03": {"Carlsberg Danish Pilsner": 1.56, "Carlsberg Smooth Draught": 0.78, "Connor's Can": 0.384}, "2025-04": {"Carlsberg Danish Pilsner": 3.12, "Carlsberg Smooth Draught": 1.56, "Connor's Can": 0.384, "Somersby Apple": 0.156}, "2025-05": {"Carlsberg Danish Pilsner": 1.95, "Carlsberg Smooth Draught": 1.17, "Connor's Can": 0.384, "Somersby Apple": 0.078}, "2025-06": {"Carlsberg Danish Pilsner": 2.73, "Carlsberg Smooth Draught": 2.34, "Connor's Can": 0.768, "Somersby Apple": 0.156}, "2025-07": {"Carlsberg Danish Pilsner": 2.34, "Carlsberg Smooth Draught": 1.95, "Connor's Can": 0.768, "Somersby Apple": 0.078}, "2025-08": {"Carlsberg Danish Pilsner": 4.68, "Carlsberg Smooth Draught": 4.29, "Connor's Can": 2.304, "Somersby Apple": 0.468}, "2025-10": {"Carlsberg Danish Pilsner": 3.12, "Carlsberg Smooth Draught": 0.78}, "2025-11": {"Carlsberg Danish Pilsner": 1.17, "Carlsberg Smooth Draught": 0.39}, "2025-12": {"Carlsberg Smooth Draught": 0.39}}, "Loud Speaker @ Subang": {"2024-01": {"Carlsberg Danish Pilsner": 5.07, "Carlsberg Smooth Draught": 0.78, "Connor's Can": 0.5376}, "2024-02": {"Carlsberg Danish Pilsner": 2.34, "Carlsberg Smooth Draught": 0.78, "Connor's Can": 0.3072, "Somersby Apple": 0.078}, "2024-03": {"Carlsberg Danish Pilsner": 5.07, "Carlsberg Smooth Draught": 1.17, "Connor's Can": 0.384}, "2024-04": {"Carlsberg Smooth Draught": 0.78}, "2024-05": {"Carlsberg Danish Pilsner": 0.78, "Carlsberg Smooth Draught": 3.9, "Connor's Can": 0.384, "Somersby Apple": 0.234}, "2024-06": {"Carlsberg Danish Pilsner": 1.56, "Carlsberg Smooth Draught": 2.73, "Connor's Can": 0.384, "Somersby Apple": 0.234}, "2024-07": {"Carlsberg Danish Pilsner": 3.51, "Carlsberg Smooth Draught": 2.34, "Connor's Can": 0.768, "Somersby Apple": 0.078}, "2024-08": {"Carlsberg Danish Pilsner": 1.56, "Carlsberg Smooth Draught": 1.56, "Connor's Can": 0.2304, "Somersby Apple": 0.078}, "2024-09": {"Carlsberg Danish Pilsner": 2.34, "Carlsberg Smooth Draught": 2.34, "Connor's Can": 0.1536, "Somersby Apple": 0.078}, "2024-10": {"Carlsberg Danish Pilsner": 1.56, "Carlsberg Smooth Draught": 2.73, "Connor's Can": 0.2304, "Somersby Apple": 0.156}, "2024-11": {"Carlsberg Danish Pilsner": 3.12, "Carlsberg Smooth Draught": 1.56, "Connor's Can": 0.8448, "Somersby Apple": 0.234}, "2024-12": {"Carlsberg Danish Pilsner": 2.73, "Carlsberg Smooth Draught": 2.73, "Connor's Can": 0.3072, "Somersby Apple": 0.312}, "2025-01": {"Carlsberg Danish Pilsner": 2.73, "Carlsberg Smooth Draught": 1.95, "Connor's Can": 0.4608, "Somersby Apple": 0.156}, "2025-02": {"Carlsberg Danish Pilsner": 1.17, "Carlsberg Smooth Draught": 1.95, "Connor's Can": 0.384, "Somersby Apple": 0.078}, "2025-03": {"Carlsberg Danish Pilsner": 1.56, "Carlsberg Smooth Draught": 1.95, "Connor's Can": 0.384}, "2025-04": {"Carlsberg Danish Pilsner": 1.95, "Carlsberg Smooth Draught": 1.56, "Connor's Can": 0.3072, "Somersby Apple": 0.156}, "2025-05": {"Carlsberg Danish Pilsner": 1.56, "Carlsberg Smooth Draught": 1.56, "Connor's Can": 0.2304, "Somersby Apple": 0.312}, "2025-06": {"Carlsberg Danish Pilsner": 1.95, "Carlsberg Smooth Draught": 1.95, "Connor's Can": 0.1536, "Somersby Apple": 0.156}, "2025-07": {"Carlsberg Danish Pilsner": 1.95, "Carlsberg Smooth Draught": 2.34, "Connor's Can": 0.6144, "Somersby Apple": 0.312}, "2025-08": {"Carlsberg Danish Pilsner": 2.73, "Carlsberg Smooth Draught": 2.34, "Connor's Can": 0.4608, "Somersby Apple": 0.156}, "2025-10": {"Carlsberg Danish Pilsner": 1.17, "Carlsberg Smooth Draught": 1.95, "Connor's Can": 0.768, "Somersby Apple": 0.39}, "2025-11": {"Carlsberg Danish Pilsner": 1.56, "Carlsberg Smooth Draught": 1.95, "Connor's Can": 0.1536, "Somersby Apple": 0.156}}, "Loud Speaker @ Sunway Carnival": {"2024-10": {"Carlsberg Danish Pilsner": 2.184, "Carlsberg Smooth Draught": 0.702, "Connor's Can": 0.384, "Somersby Apple": 0.234}, "2024-11": {"Carlsberg Danish Pilsner": 1.56, "Carlsberg Smooth Draught": 1.014, "Connor's Can": 0.1536, "Somersby Apple": 0.078}, "2024-12": {"Carlsberg Danish Pilsner": 1.95, "Carlsberg Smooth Draught": 1.95, "Connor's Can": 0.4608, "Somersby Apple": 0.468}, "2025-01": {"Carlsberg Danish Pilsner": 2.73, "Carlsberg Smooth Draught": 0.78, "Connor's Can": 0.3072, "Somersby Apple": 0.078}, "2025-02": {"Carlsberg Danish Pilsner": 0.78, "Carlsberg Smooth Draught": 1.17, "Connor's Can": 0.384, "Somersby Apple": 0.156}, "2025-03": {"Carlsberg Danish Pilsner": 0.78, "Carlsberg Smooth Draught": 0.39}, "2025-04": {"Carlsberg Danish Pilsner": 1.17, "Carlsberg Smooth Draught": 0.78, "Connor's Can": 0.1536, "Somersby Apple": 0.156}, "2025-05": {"Carlsberg Danish Pilsner": 1.17, "Carlsberg Smooth Draught": 1.17, "Connor's Can": 0.2304, "Somersby Apple": 0.156}, "2025-06": {"Carlsberg Danish Pilsner": 1.56, "Carlsberg Smooth Draught": 1.17, "Connor's Can": 0.3072, "Somersby Apple": 0.156}, "2025-07": {"Carlsberg Danish Pilsner": 1.17, "Carlsberg Smooth Draught": 0.78, "Connor's Can": 0.384, "Somersby Apple": 0.156}, "2025-08": {"Carlsberg Danish Pilsner": 3.51, "Carlsberg Smooth Draught": 3.12, "Connor's Can": 1.3056, "Somersby Apple": 0.78}, "2025-11": {"Carlsberg Danish Pilsner": 0.78}}, "Loud Speaker @ Taman Sutera": {"2024-01": {"Carlsberg Danish Pilsner": 2.262, "Carlsberg Smooth Draught": 0.312, "Somersby Apple": 0.312}, "2024-02": {"Carlsberg Danish Pilsner": 3.198, "Carlsberg Smooth Draught": 0.156, "Connor's Can": 0.1536, "Somersby Apple": 0.078}, "2024-03": {"Carlsberg Danish Pilsner": 2.73, "Carlsberg Smooth Draught": 0.546, "Somersby Apple": 0.156}, "2024-04": {"Carlsberg Danish Pilsner": 3.588, "Carlsberg Smooth Draught": 0.78, "Connor's Can": 0.2304, "Somersby Apple": 0.156}, "2024-05": {"Carlsberg Danish Pilsner": 2.73, "Carlsberg Smooth Draught": 0.78, "Connor's Can": 0.0768}, "2024-06": {"Carlsberg Danish Pilsner": 1.95, "Carlsberg Smooth Draught": 0.858, "Connor's Can": 0.3072, "Somersby Apple": 0.078}, "2024-07": {"Carlsberg Danish Pilsner": 4.056, "Carlsberg Smooth Draught": 1.404, "Connor's Can": 0.3072, "Somersby Apple": 0.312}, "2024-08": {"Carlsberg Danish Pilsner": 4.134, "Carlsberg Smooth Draught": 1.716, "Connor's Can": 0.3072, "Somersby Apple": 0.156}, "2024-09": {"Carlsberg Danish Pilsner": 4.134, "Carlsberg Smooth Draught": 1.872, "Connor's Can": 0.384, "Somersby Apple": 0.312}, "2024-10": {"Carlsberg Danish Pilsner": 2.262, "Carlsberg Smooth Draught": 2.262, "Connor's Can": 0.384, "Somersby Apple": 0.39}, "2024-11": {"Carlsberg Danish Pilsner": 3.666, "Carlsberg Smooth Draught": 1.482, "Connor's Can": 0.6144, "Somersby Apple": 0.234}, "2024-12": {"Carlsberg Danish Pilsner": 3.51, "Carlsberg Smooth Draught": 1.95, "Connor's Can": 0.384, "Somersby Apple": 0.312}, "2025-01": {"Carlsberg Danish Pilsner": 4.29, "Carlsberg Smooth Draught": 3.276, "Connor's Can": 0.768, "Somersby Apple": 0.234}, "2025-02": {"Carlsberg Danish Pilsner": 1.716, "Carlsberg Smooth Draught": 0.624, "Connor's Can": 0.0768, "Somersby Apple": 0.078}, "2025-03": {"Carlsberg Danish Pilsner": 3.12, "Carlsberg Smooth Draught": 1.56, "Connor's Can": 0.3072, "Somersby Apple": 0.078}, "2025-04": {"Carlsberg Danish Pilsner": 2.496, "Carlsberg Smooth Draught": 1.716, "Connor's Can": 0.384, "Somersby Apple": 0.39}, "2025-05": {"Carlsberg Danish Pilsner": 3.822, "Carlsberg Smooth Draught": 1.404, "Connor's Can": 0.3072, "Somersby Apple": 0.468}, "2025-06": {"Carlsberg Danish Pilsner": 2.73, "Carlsberg Smooth Draught": 1.404, "Connor's Can": 0.2304, "Somersby Apple": 0.312}, "2025-07": {"Carlsberg Danish Pilsner": 2.418, "Carlsberg Smooth Draught": 1.482, "Connor's Can": 0.2304, "Somersby Apple": 0.234}, "2025-08": {"Carlsberg Danish Pilsner": 4.68, "Carlsberg Smooth Draught": 1.716, "Connor's Can": 0.5376, "Somersby Apple": 0.312}, "2025-09": {"Carlsberg Danish Pilsner": 2.418, "Carlsberg Smooth Draught": 0.78, "Connor's Can": 0.1536, "Somersby Apple": 0.234}, "2025-10": {"Carlsberg Danish Pilsner": 2.262, "Carlsberg Smooth Draught": 1.404, "Connor's Can": 0.2304, "Somersby Apple": 0.312}, "2025-11": {"Carlsberg Danish Pilsner": 1.95, "Carlsberg Smooth Draught": 0.78, "Connor's Can": 0.2304, "Somersby Apple": 0.234}, "2025-12": {"Carlsberg Danish Pilsner": 0.468, "Carlsberg Smooth Draught": 0.39, "Connor's Can": 0.1536, "Somersby Apple": 0.078}}, "Loud Speaker @ Tropicana": {"2024-01": {"Carlsberg Danish Pilsner": 5.07, "Carlsberg Smooth Draught": 1.17, "Connor's Can": 0.6144, "Somersby Apple": 0.234}, "2024-02": {"Carlsberg Danish Pilsner": 4.446, "Carlsberg Smooth Draught": 1.17, "Connor's Can": 0.384, "Somersby Apple": 0.078}, "2024-03": {"Carlsberg Danish Pilsner": 2.34, "Carlsberg Smooth Draught": 0.858, "Somersby Apple": 0.156}, "2024-04": {"Carlsberg Danish Pilsner": 1.794, "Carlsberg Smooth Draught": 1.716}, "2024-05": {"Carlsberg Danish Pilsner": 3.12, "Carlsberg Smooth Draught": 2.964, "Connor's Can": 0.4608, "Somersby Apple": 0.234}, "2024-06": {"Carlsberg Danish Pilsner": 1.17, "Carlsberg Smooth Draught": 2.73, "Connor's Can": 0.2304, "Somersby Apple": 0.078}, "2024-07": {"Carlsberg Danish Pilsner": 2.73, "Carlsberg Smooth Draught": 2.34, "Connor's Can": 0.6912, "Somersby Apple": 0.39}, "2024-08": {"Carlsberg Danish Pilsner": 2.34, "Carlsberg Smooth Draught": 2.73, "Connor's Can": 0.4608, "Somersby Apple": 0.156}, "2024-09": {"Carlsberg Danish Pilsner": 1.56, "Carlsberg Smooth Draught": 1.95, "Connor's Can": 0.384, "Somersby Apple": 0.234}, "2024-10": {"Carlsberg Danish Pilsner": 2.34, "Carlsberg Smooth Draught": 2.34, "Connor's Can": 0.4608, "Somersby Apple": 0.156}, "2024-11": {"Carlsberg Danish Pilsner": 2.73, "Carlsberg Smooth Draught": 2.028, "Connor's Can": 0.4608, "Somersby Apple": 0.312}, "2024-12": {"Carlsberg Danish Pilsner": 2.886, "Carlsberg Smooth Draught": 3.12, "Connor's Can": 0.768, "Somersby Apple": 0.312}, "2025-01": {"Carlsberg Danish Pilsner": 1.56, "Carlsberg Smooth Draught": 3.12, "Connor's Can": 0.384, "Somersby Apple": 0.312}, "2025-02": {"Carlsberg Danish Pilsner": 1.17, "Carlsberg Smooth Draught": 1.56, "Connor's Can": 0.384}, "2025-03": {"Carlsberg Danish Pilsner": 1.95, "Carlsberg Smooth Draught": 2.34, "Connor's Can": 0.2304, "Somersby Apple": 0.156}, "2025-04": {"Carlsberg Danish Pilsner": 0.312, "Carlsberg Smooth Draught": 1.56, "Connor's Can": 0.384, "Somersby Apple": 0.156}, "2025-05": {"Carlsberg Danish Pilsner": 1.56, "Carlsberg Smooth Draught": 1.56, "Connor's Can": 0.384, "Somersby Apple": 0.156}, "2025-06": {"Carlsberg Danish Pilsner": 1.56, "Carlsberg Smooth Draught": 1.56, "Connor's Can": 0.384, "Somersby Apple": 0.312}, "2025-07": {"Carlsberg Danish Pilsner": 2.34, "Carlsberg Smooth Draught": 2.496, "Somersby Apple": 0.156}, "2025-08": {"Carlsberg Danish Pilsner": 2.34, "Carlsberg Smooth Draught": 3.12, "Connor's Can": 0.768, "Somersby Apple": 0.312}, "2025-10": {"Carlsberg Danish Pilsner": 1.17, "Carlsberg Smooth Draught": 1.17, "Connor's Can": 0.384}, "2025-11": {"Carlsberg Danish Pilsner": 1.56, "Carlsberg Smooth Draught": 1.56, "Connor's Can": 0.384, "Somersby Apple": 0.234}}};
+
+// ─── PAGE 4: BRAND COMPARISON ───────────────────────────────────────────
+// Heineken: 7 months (Dec 2025 – Jun 2026)
+const H_MONTHS = Object.keys(MD).length; // 7
+// Carlsberg: 24 months (Jan 2024 – Dec 2025)
+const C_MONTHS = Object.keys(CMD).length; // 24
+
+// All-time product totals (for monthly avg)
+function allTimeProds(mpd, nMonths){
+  const map={};
+  Object.values(mpd).forEach(mo=>Object.entries(mo).forEach(([p,hl])=>{ map[p]=(map[p]||0)+hl; }));
+  // return avg per month
+  const avg={};
+  Object.entries(map).forEach(([p,hl])=>avg[p]=hl/nMonths);
+  return avg;
+}
+
+const H_AVG = allTimeProds(MPD, H_MONTHS);   // Heineken avg HL/month per product
+const C_AVG = allTimeProds(CMPD, C_MONTHS);  // Carlsberg avg HL/month per product
+
+// Product → Category mapping
+const PCAT = {
+  // Heineken
+  'Tiger Pint':'Lager (Bottle)', 'Heineken Pint':'Lager (Bottle)',
+  'Guinness Pint':'Stout (Bottle)',
+  'Tiger Can':'Lager (Can)', 'Edelweiss Can':'Wheat Beer (Can)',
+  'Tiger Soju Can':'Flavoured (Can)', 'Tiger Soju Pint':'Flavoured (Bottle)',
+  'Fox Cider Pint':'Cider', 'Fox Cider Can':'Cider',
+  'Tiger 30L Keg':'Keg — Large', 'Heineken 5L Keg':'Keg — Mini',
+  'Heineken 10L Keg':'Keg — Small', 'Guinness 10L Keg':'Keg — Small', 'Kilkenny 10L Keg':'Keg — Small',
+  'Shandy Anglia':'Shandy',
+  // Carlsberg
+  'Carlsberg Danish Pilsner':'Lager (Bottle)', 'Carlsberg Smooth Draught':'Lager (Bottle)',
+  "Connor's Can":'Lager (Can)', 'Carlsberg Green Label Can':'Lager (Can)',
+  'Somersby Apple':'Cider',
+  'Carlsberg GL 22.7L Keg':'Keg — Large', 'Carlsberg SD 22.7L Keg':'Keg — Large',
+  "Connor's 10L Keg":'Keg — Small', '1664 Blanc 10L Keg':'Keg — Small', 'Asahi Super Dry 10L Keg':'Keg — Small',
+};
+
+// Spotlight: head-to-head product pairs (user-defined matchups)
+const MATCHUPS = [
+  { cat:'Cider', label:'Cider Battle',
+    h:['Fox Cider Pint','Fox Cider Can'], c:['Somersby Apple'],
+    note:'Apple Fox (Heineken) vs Somersby (Carlsberg)' },
+  { cat:'Lager (Bottle)', label:'Mainstream Lager',
+    h:['Tiger Pint','Heineken Pint'], c:['Carlsberg Danish Pilsner','Carlsberg Smooth Draught'],
+    note:'Tiger + Heineken Pint vs Carlsberg Bottle' },
+  { cat:'Lager (Can)', label:'Can Beer',
+    h:['Tiger Can'], c:["Connor's Can",'Carlsberg Green Label Can'],
+    note:"Tiger Can vs Connor's + Carlsberg GL Can" },
+  { cat:'Keg — Large', label:'Large Draught Keg',
+    h:['Tiger 30L Keg'], c:['Carlsberg GL 22.7L Keg','Carlsberg SD 22.7L Keg'],
+    note:'Tiger 30L vs Carlsberg 22.7L Kegs' },
+  { cat:'Keg — Small', label:'Small Draught Keg',
+    h:['Heineken 10L Keg','Guinness 10L Keg','Kilkenny 10L Keg'],
+    c:["Connor's 10L Keg",'1664 Blanc 10L Keg','Asahi Super Dry 10L Keg'],
+    note:'H/Guinness/Kilkenny 10L vs Connors/1664/Asahi 10L' },
+  { cat:'Wheat Beer (Can)', label:'Specialty Can',
+    h:['Edelweiss Can','Tiger Soju Can'], c:[],
+    note:'Edelweiss + Tiger Soju — no Carlsberg equivalent' },
+];
+
+// Aggregate by category
+function catTotals(avgMap){
+  const cat={};
+  Object.entries(avgMap).forEach(([p,avg])=>{
+    const c=PCAT[p]||'Other';
+    if(!cat[c]) cat[c]={prods:[],total:0};
+    cat[c].prods.push({p,avg});
+    cat[c].total+=avg;
+  });
+  return cat;
+}
+
+function renderComparePage(){
+  const hCat = catTotals(H_AVG);
+  const cCat = catTotals(C_AVG);
+
+  const hTotalAvg = Object.values(H_AVG).reduce((a,b)=>a+b,0);
+  const cTotalAvg = Object.values(C_AVG).reduce((a,b)=>a+b,0);
+  const gap = hTotalAvg - cTotalAvg;
+
+  // KPI row
+  document.getElementById('cmpKpiRow').innerHTML=`
+    <div class="pb2-kpi" style="--c:#1976d2">
+      <div class="lbl">Heineken Avg HL/Month</div>
+      <div class="val">${fm(hTotalAvg)}</div>
+      <div class="sub">Dec 2025 – Jun 2026 (7 mths)</div>
+    </div>
+    <div class="pb2-kpi" style="--c:#e8572a">
+      <div class="lbl">Carlsberg Avg HL/Month</div>
+      <div class="val">${fm(cTotalAvg)}</div>
+      <div class="sub">Jan 2024 – Dec 2025 (24 mths)</div>
+    </div>
+    <div class="pb2-kpi" style="--c:${gap>=0?'#1976d2':'#ef4444'}">
+      <div class="lbl">Monthly Lead (Heineken)</div>
+      <div class="val">${gap>=0?'+':''}${fm(gap)}</div>
+      <div class="sub">avg HL/month difference</div>
+    </div>
+    <div class="pb2-kpi" style="--c:#8b5cf6">
+      <div class="lbl">H:C Ratio</div>
+      <div class="val">${fm(hTotalAvg/cTotalAvg,2)}x</div>
+      <div class="sub">Heineken per 1 Carlsberg HL</div>
+    </div>`;
+
+  // Category chart
+  const cats=[...new Set([...Object.keys(hCat),...Object.keys(cCat)])].sort();
+  const hVals=cats.map(c=>+(hCat[c]?.total||0).toFixed(3));
+  const cVals=cats.map(c=>+(cCat[c]?.total||0).toFixed(3));
+
+  if(window._cmpCatChart) window._cmpCatChart.destroy();
+  window._cmpCatChart=new Chart(document.getElementById('cmpCatChart'),{
+    type:'bar',
+    data:{labels:cats,datasets:[
+      {label:'Heineken avg HL/mth',data:hVals,backgroundColor:'rgba(25,118,210,.8)',borderRadius:4,borderSkipped:false},
+      {label:'Carlsberg avg HL/mth',data:cVals,backgroundColor:'rgba(232,87,42,.8)',borderRadius:4,borderSkipped:false}
+    ]},
+    options:{responsive:true,maintainAspectRatio:true,
+      plugins:{legend:{labels:{color:'#6b7280',boxWidth:12,font:{size:11}}}},
+      scales:{
+        x:{ticks:{color:'#6b7280',font:{size:10}},grid:{color:'#f1f5f9'}},
+        y:{ticks:{color:'#9ca3af'},grid:{color:'#f1f5f9'},title:{display:true,text:'Avg HL / Month',color:'#6b7280'}}
+      }
+    }
+  });
+
+  // Matchup table
+  const tb=document.getElementById('cmpMatchTbody');
+  tb.innerHTML='';
+  MATCHUPS.forEach(mu=>{
+    const hHL=mu.h.reduce((s,p)=>s+(H_AVG[p]||0),0);
+    const cHL=mu.c.reduce((s,p)=>s+(C_AVG[p]||0),0);
+    const diff=hHL-cHL;
+    const hLeads=diff>0, tied=Math.abs(diff)<0.01;
+    const hProdsHtml=mu.h.map(p=>`<span style="font-size:11px;background:#dbeafe;color:#1d4ed8;border-radius:10px;padding:1px 7px;display:inline-block;margin:1px">${p}</span>`).join(' ');
+    const cProdsHtml=mu.c.length?mu.c.map(p=>`<span style="font-size:11px;background:#fde8e0;color:#c2410c;border-radius:10px;padding:1px 7px;display:inline-block;margin:1px">${p}</span>`).join(' '):`<span style="color:#94a3b8;font-size:11px;font-style:italic">— no equivalent —</span>`;
+    const leadBadge=tied?`<span style="background:#f1f5f9;color:#6b7280;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600">Tied</span>`:hLeads?`<span style="background:#dbeafe;color:#1d4ed8;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600">✓ Heineken</span>`:`<span style="background:#fde8e0;color:#c2410c;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600">✗ Behind</span>`;
+    const tr=document.createElement('tr');
+    tr.style.borderLeft=`3px solid ${hLeads||tied?'#1976d2':'#ef4444'}`;
+    tr.innerHTML=`
+      <td style="font-weight:700;color:#1e293b;white-space:nowrap">${mu.cat}</td>
+      <td>${hProdsHtml}</td>
+      <td style="text-align:right;font-weight:700;color:#1976d2;font-size:15px">${fm(hHL)}</td>
+      <td>${cProdsHtml}</td>
+      <td style="text-align:right;font-weight:700;color:#e8572a;font-size:15px">${cHL>0?fm(cHL):'—'}</td>
+      <td style="text-align:right;font-weight:700;color:${hLeads?'#1976d2':'#ef4444'}">${!tied?(diff>0?'+':'')+fm(diff):'—'}</td>
+      <td style="text-align:center">${leadBadge}</td>`;
+    tb.appendChild(tr);
+  });
+
+  // Spotlight cards
+  const spot=document.getElementById('cmpSpotlight');
+  spot.innerHTML='';
+  MATCHUPS.forEach(mu=>{
+    const hHL=mu.h.reduce((s,p)=>s+(H_AVG[p]||0),0);
+    const cHL=mu.c.reduce((s,p)=>s+(C_AVG[p]||0),0);
+    const total=hHL+cHL||1;
+    const hPct=hHL/total*100, cPct=cHL/total*100;
+    const hLeads=hHL>=cHL;
+    const card=document.createElement('div');
+    card.className='chart-card';
+    card.style.padding='16px 18px';
+    card.innerHTML=`
+      <div style="font-weight:700;color:#1e293b;margin-bottom:4px">${mu.label}</div>
+      <div style="font-size:11px;color:#94a3b8;margin-bottom:12px">${mu.note}</div>
+      <!-- Heineken bar -->
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <div style="width:70px;font-size:11px;font-weight:600;color:#1976d2;text-align:right">Heineken</div>
+        <div style="flex:1;background:#f1f5f9;border-radius:6px;height:22px;position:relative;overflow:hidden">
+          <div style="width:${hPct}%;background:linear-gradient(90deg,#1565c0,#2196f3);height:100%;border-radius:6px;transition:width .4s"></div>
+        </div>
+        <div style="width:52px;font-size:12px;font-weight:700;color:#1976d2">${fm(hHL)}</div>
+      </div>
+      <!-- Carlsberg bar -->
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+        <div style="width:70px;font-size:11px;font-weight:600;color:#e8572a;text-align:right">Carlsberg</div>
+        <div style="flex:1;background:#f1f5f9;border-radius:6px;height:22px;position:relative;overflow:hidden">
+          <div style="width:${cPct}%;background:linear-gradient(90deg,#c2410c,#ef4444);height:100%;border-radius:6px;transition:width .4s"></div>
+        </div>
+        <div style="width:52px;font-size:12px;font-weight:700;color:#e8572a">${cHL>0?fm(cHL):'—'}</div>
+      </div>
+      <div style="font-size:12px;padding:6px 10px;border-radius:8px;background:${hLeads&&cHL>0?'#eff6ff':cHL===0?'#f8fafc':'#fef2f2'};color:${hLeads&&cHL>0?'#1d4ed8':cHL===0?'#6b7280':'#ef4444'};font-weight:600">
+        ${cHL===0?'No Carlsberg competitor in this category':hLeads?`Heineken leads by +${fm(hHL-cHL)} HL/mth`:`Carlsberg leads by +${fm(cHL-hHL)} HL/mth — chase this gap!`}
+      </div>`;
+    spot.appendChild(card);
+  });
+}
+
+renderComparePage();
+
+</script>
+</body>
+</html>
