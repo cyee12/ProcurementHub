@@ -1,0 +1,466 @@
+<title>Operation × Procurement Hub</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap">
+
+<style>
+/* ── Tokens ──────────────────────────────────────────────────────── */
+:root {
+  --brand:      #0b1d35;
+  --brand-mid:  #112843;
+  --accent:     #0ea87e;
+  --accent-dim: #d0f5eb;
+  --ground:     #f0f6f4;
+  --card:       #ffffff;
+  --border:     #daeae5;
+  --ink:        #0d1e18;
+  --ink2:       #3a5249;
+  --muted:      #5f7a70;
+  --tag-bg:     #e4f5ef;
+  --tag-ink:    #0a7a5c;
+
+  --cat-report: #0ea87e;
+  --cat-files:  #3b7dff;
+
+  --radius-card: 10px;
+  --shadow-card: 0 1px 3px rgba(11,29,53,.07), 0 4px 14px rgba(11,29,53,.06);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --brand:      #071520;
+    --brand-mid:  #0b2035;
+    --accent:     #1dd4a2;
+    --accent-dim: #0d3328;
+    --ground:     #081c18;
+    --card:       #0f2820;
+    --border:     #173d2e;
+    --ink:        #e2f0ec;
+    --ink2:       #8dbdae;
+    --muted:      #5d8a7a;
+    --tag-bg:     #0d3328;
+    --tag-ink:    #1dd4a2;
+    --cat-report: #1dd4a2;
+    --cat-files:  #5b96ff;
+  }
+}
+:root[data-theme="dark"] {
+  --brand:      #071520;
+  --brand-mid:  #0b2035;
+  --accent:     #1dd4a2;
+  --accent-dim: #0d3328;
+  --ground:     #081c18;
+  --card:       #0f2820;
+  --border:     #173d2e;
+  --ink:        #e2f0ec;
+  --ink2:       #8dbdae;
+  --muted:      #5d8a7a;
+  --tag-bg:     #0d3328;
+  --tag-ink:    #1dd4a2;
+  --cat-report: #1dd4a2;
+  --cat-files:  #5b96ff;
+}
+
+/* ── Reset & base ────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background: var(--ground);
+  color: var(--ink);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+a { text-decoration: none; color: inherit; }
+button { font-family: inherit; cursor: pointer; }
+
+/* ── Header ──────────────────────────────────────────────────────── */
+.header {
+  background: linear-gradient(135deg, var(--brand) 0%, var(--brand-mid) 100%);
+  padding: 28px 36px 26px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
+  border-bottom: 1px solid rgba(255,255,255,.05);
+}
+.header-left { display: flex; align-items: center; gap: 16px; }
+.header-logo {
+  width: 44px; height: 44px;
+  background: rgba(255,255,255,.1);
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,.16);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px;
+  flex-shrink: 0;
+}
+.header-title {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 20px;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -.3px;
+  line-height: 1.2;
+  text-wrap: balance;
+}
+.header-title .x {
+  color: var(--accent);
+  font-weight: 400;
+  margin: 0 2px;
+}
+.header-sub {
+  font-size: 11.5px;
+  color: rgba(255,255,255,.5);
+  margin-top: 3px;
+  font-weight: 400;
+  letter-spacing: .3px;
+  text-transform: uppercase;
+}
+.header-right { text-align: right; flex-shrink: 0; }
+.header-date {
+  font-size: 12px;
+  color: rgba(255,255,255,.45);
+  font-family: 'Inter', sans-serif;
+  font-weight: 400;
+}
+.header-greeting {
+  font-size: 13px;
+  color: rgba(255,255,255,.82);
+  font-weight: 500;
+  margin-bottom: 3px;
+}
+.theme-btn {
+  background: rgba(255,255,255,.08);
+  border: 1px solid rgba(255,255,255,.15);
+  border-radius: 6px;
+  color: rgba(255,255,255,.65);
+  padding: 5px 10px;
+  font-size: 12px;
+  margin-top: 6px;
+  transition: background .15s;
+}
+.theme-btn:hover { background: rgba(255,255,255,.16); color: #fff; }
+
+/* ── Main layout ─────────────────────────────────────────────────── */
+.main {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 36px 24px 60px;
+}
+
+/* ── Section ─────────────────────────────────────────────────────── */
+.section { margin-bottom: 38px; }
+.section-label {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 1.1px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 12px;
+  padding-left: 2px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.section-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* ── Card ────────────────────────────────────────────────────────── */
+.card-list { display: flex; flex-direction: column; gap: 8px; }
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 18px;
+  transition: box-shadow .18s ease, border-color .18s ease, transform .15s ease;
+  position: relative;
+  overflow: hidden;
+}
+.card::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+  background: var(--cat-color);
+  border-radius: 2px 0 0 2px;
+}
+.card:hover {
+  box-shadow: 0 2px 8px rgba(11,29,53,.09), 0 8px 28px rgba(11,29,53,.10);
+  border-color: color-mix(in srgb, var(--cat-color) 30%, var(--border));
+  transform: translateY(-1px);
+}
+
+.card-icon {
+  width: 42px; height: 42px;
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--cat-color) 12%, var(--card));
+  border: 1px solid color-mix(in srgb, var(--cat-color) 22%, var(--border));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+.card-body { flex: 1; min-width: 0; }
+.card-name {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.card-desc {
+  font-size: 12px;
+  color: var(--ink2);
+  margin-top: 3px;
+  line-height: 1.55;
+}
+.card-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+}
+.tag {
+  font-size: 10px;
+  font-weight: 600;
+  background: var(--tag-bg);
+  color: var(--tag-ink);
+  border-radius: 4px;
+  padding: 2px 6px;
+  letter-spacing: .2px;
+}
+.tag.monthly {
+  background: color-mix(in srgb, var(--cat-report) 14%, var(--card));
+  color: var(--cat-report);
+}
+.tag.sharepoint {
+  background: color-mix(in srgb, var(--cat-files) 12%, var(--card));
+  color: var(--cat-files);
+}
+.tag.folder {
+  background: color-mix(in srgb, #f59e0b 14%, var(--card));
+  color: #b45309;
+}
+
+.card-action { flex-shrink: 0; }
+.open-btn {
+  background: var(--cat-color);
+  color: #fff;
+  border: none;
+  border-radius: 7px;
+  padding: 8px 16px;
+  font-size: 12.5px;
+  font-weight: 600;
+  font-family: 'Inter', sans-serif;
+  letter-spacing: .1px;
+  transition: opacity .15s, transform .12s;
+  white-space: nowrap;
+}
+.open-btn:hover { opacity: .87; transform: scale(1.02); }
+.open-btn:active { transform: scale(.98); }
+
+/* ── Footer ──────────────────────────────────────────────────────── */
+.footer {
+  border-top: 1px solid var(--border);
+  padding: 20px 24px;
+  text-align: center;
+  font-size: 11.5px;
+  color: var(--muted);
+  line-height: 1.7;
+}
+.footer strong { color: var(--ink2); font-weight: 600; }
+.footer a { color: var(--accent); }
+
+/* ── Responsive ──────────────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .header { padding: 20px 18px 18px; }
+  .main { padding: 24px 14px 48px; }
+  .card { gap: 12px; padding: 14px 14px; }
+  .card-desc { display: none; }
+  .header-right { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .card, .open-btn { transition: none; }
+}
+</style>
+
+<!-- Header -->
+<header class="header">
+  <div class="header-left">
+    <div class="header-logo">⚙️</div>
+    <div>
+      <div class="header-title">Operation <span class="x">×</span> Procurement Hub</div>
+      <div class="header-sub">Loud Speaker &amp; Mini Studio · F&amp;B Operations</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="header-greeting" id="greeting">Good morning, CY 👋</div>
+    <div class="header-date" id="dateLine">—</div>
+    <button class="theme-btn" onclick="toggleTheme()">☀︎ / ☾</button>
+  </div>
+</header>
+
+<!-- Main -->
+<main class="main">
+
+  <!-- Monthly Reports -->
+  <section class="section">
+    <div class="section-label">Monthly Reports</div>
+    <div class="card-list">
+
+      <div class="card" style="--cat-color: var(--cat-report)">
+        <div class="card-icon">📝</div>
+        <div class="card-body">
+          <div class="card-name">Stock Count Report</div>
+          <div class="card-desc">Monthly stock count for Loud Speaker and Mini Studio branches. Includes branch-specific exclusions and item code mappings.</div>
+          <div class="card-meta">
+            <span class="tag monthly">Monthly</span>
+          </div>
+        </div>
+        <div class="card-action">
+          <button class="open-btn" onclick="openTool('Stock Count Report.html')">Open →</button>
+        </div>
+      </div>
+
+      <div class="card" style="--cat-color: var(--cat-report)">
+        <div class="card-icon">📊</div>
+        <div class="card-body">
+          <div class="card-name">Procurement Dashboard</div>
+          <div class="card-desc">Monthly KPI overview — I/S ratio, spend by category and branch. Replace the file each month to refresh the data.</div>
+          <div class="card-meta">
+            <span class="tag monthly">Monthly</span>
+          </div>
+        </div>
+        <div class="card-action">
+          <button class="open-btn" onclick="openTool('Procurement_Dashboard.html')">Open →</button>
+        </div>
+      </div>
+
+      <div class="card" style="--cat-color: var(--cat-report)">
+        <div class="card-icon">🍺</div>
+        <div class="card-body">
+          <div class="card-name">Heineken Incentive Tracker</div>
+          <div class="card-desc">Tracks outlet performance against Heineken incentive targets across the 2025–2028 campaign. Visual progress by branch.</div>
+          <div class="card-meta">
+            <span class="tag monthly">2025 – 2028</span>
+          </div>
+        </div>
+        <div class="card-action">
+          <button class="open-btn" onclick="openTool('Heineken Incentive Tracker.html')">Open →</button>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- SharePoint Files -->
+  <section class="section">
+    <div class="section-label">SharePoint Files</div>
+    <div class="card-list">
+
+      <div class="card" style="--cat-color: var(--cat-files)">
+        <div class="card-icon">📋</div>
+        <div class="card-body">
+          <div class="card-name">Sourcing Form Template</div>
+          <div class="card-desc">Manual Request for Sourcing form — download, fill in, and submit to the procurement team.</div>
+          <div class="card-meta">
+            <span class="tag folder">📁 Folder</span>
+            <span class="tag sharepoint">SharePoint</span>
+          </div>
+        </div>
+        <div class="card-action">
+          <button class="open-btn" onclick="openLink('https://loudspeaker-my.sharepoint.com/:f:/g/personal/purchasing_loudspeaker_my/IgAYH06ZIpQZTZTBuqeKQ15hAd7U8b8c0cuFYBKh_HzXr44?e=TFH9Ea')">Open →</button>
+        </div>
+      </div>
+
+      <div class="card" style="--cat-color: var(--cat-files)">
+        <div class="card-icon">🧾</div>
+        <div class="card-body">
+          <div class="card-name">Outlet Receiving File</div>
+          <div class="card-desc">Excel file for tracking goods received at outlets. Opens in Excel Online via SharePoint.</div>
+          <div class="card-meta">
+            <span class="tag sharepoint">Excel Online</span>
+            <span class="tag sharepoint">SharePoint</span>
+          </div>
+        </div>
+        <div class="card-action">
+          <button class="open-btn" onclick="openLink('https://loudspeaker-my.sharepoint.com/:x:/g/personal/procurement_loudspeaker_onmicrosoft_com/EZL6_y2sSHlJpHPsB9NC9WQBqOCjxRQdctL5IQO4nEhqOA?e=QPWvwN')">Open →</button>
+        </div>
+      </div>
+
+      <div class="card" style="--cat-color: var(--cat-files)">
+        <div class="card-icon">📂</div>
+        <div class="card-body">
+          <div class="card-name">DO &amp; INV File</div>
+          <div class="card-desc">Delivery order and invoice folder — all outlet DO &amp; INV documents stored in SharePoint.</div>
+          <div class="card-meta">
+            <span class="tag folder">📁 Folder</span>
+            <span class="tag sharepoint">SharePoint</span>
+          </div>
+        </div>
+        <div class="card-action">
+          <button class="open-btn" onclick="openLink('https://loudspeaker-my.sharepoint.com/:f:/g/personal/procurement_loudspeaker_onmicrosoft_com/IgCJ4VxponAxRJYTDUWGukB9AVcYUYBpoNcbQflJrQevg4U?e=SeBs2Z')">Open →</button>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+</main>
+
+<!-- Footer -->
+<footer class="footer">
+  <strong>Hosted on GitHub Pages</strong> · HTML tools live in the same repo · SharePoint links open in your browser ·
+  <a href="https://cyee12.github.io/Procurement-Hub/" target="_blank">← Back to Procurement Hub</a>
+</footer>
+
+<script>
+// ── Greeting & date ──────────────────────────────────────────────
+(function() {
+  const now = new Date();
+  const h = now.getHours();
+  const greet = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+  document.getElementById('greeting').textContent = greet + ', CY 👋';
+  document.getElementById('dateLine').textContent = now.toLocaleDateString('en-MY', {
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+  });
+})();
+
+// ── Open local tool (same folder) ───────────────────────────────
+function openTool(filename) {
+  window.open(filename, '_blank');
+}
+
+// ── Open external SharePoint link ────────────────────────────────
+function openLink(url) {
+  window.open(url, '_blank');
+}
+
+// ── Theme toggle ─────────────────────────────────────────────────
+function toggleTheme() {
+  const root = document.documentElement;
+  const cur = root.getAttribute('data-theme');
+  if (!cur) {
+    const sysDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    root.setAttribute('data-theme', sysDark ? 'light' : 'dark');
+  } else {
+    root.setAttribute('data-theme', cur === 'dark' ? 'light' : 'dark');
+  }
+  try { localStorage.setItem('theme-ops', root.getAttribute('data-theme')); } catch(e) {}
+}
+try {
+  const saved = localStorage.getItem('theme-ops');
+  if (saved) document.documentElement.setAttribute('data-theme', saved);
+} catch(e) {}
+</script>
