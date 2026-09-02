@@ -723,7 +723,7 @@ function renderOutletTable(){
       '<td class="right '+(adjZeroed?'adj-mark':vc)+'">'+fmt(r.var_val)+(r._adjApplied?'<span style="font-size:9px;color:#276749;margin-left:3px">adj</span>':'')+'</td>'+
       '<td class="right">'+fmt(r.actual*r.price)+'</td>'+
       '<td class="right">'+adjCell+'</td>'+
-      '<td class="right">'+(ed.adj!==null&&ed.adj!==undefined&&!isNaN(ed.adj)?'<span style="color:#2B6CB0;font-weight:600">'+(r.theo+ed.adj).toFixed(2)+'</span>':'<span style="color:#a0aec0">—</span>')+'</td>'+
+      '<td class="right">'+(ed.adj!==null&&ed.adj!==undefined&&!isNaN(ed.adj)?'<span style="color:#2B6CB0;font-weight:600">'+(r.actual+ed.adj).toFixed(2)+'</span>':'<span style="color:#a0aec0">—</span>')+'</td>'+
       '<td>'+reasonCell+'</td>'+
     '</tr>';
   });
