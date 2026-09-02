@@ -697,7 +697,7 @@ function renderOutletTable(){
     '<th class="right">Sales</th><th class="right">Theo. closing</th><th class="right">Actual closing</th>'+
     '<th class="right">Var qty</th><th class="right">Price (RM)</th><th class="right">Var value</th>'+
     '<th class="right">Stock Value</th>'+
-    '<th class="right" style="color:#2B6CB0">Outlet Adj</th><th style="color:#2B6CB0">Reason</th>'+
+    '<th class="right" style="color:#2B6CB0">Outlet Adj</th><th class="right" style="color:#2B6CB0">After Adj</th><th style="color:#2B6CB0">Reason</th>'+
     '</tr></thead><tbody>';
   effOutletRows.forEach(r=>{
     const vc=r.var_val<0?'neg':r.var_val>0?'pos':'zero';
@@ -723,6 +723,7 @@ function renderOutletTable(){
       '<td class="right '+(adjZeroed?'adj-mark':vc)+'">'+fmt(r.var_val)+(r._adjApplied?'<span style="font-size:9px;color:#276749;margin-left:3px">adj</span>':'')+'</td>'+
       '<td class="right">'+fmt(r.actual*r.price)+'</td>'+
       '<td class="right">'+adjCell+'</td>'+
+      '<td class="right">'+(ed.adj!==null&&ed.adj!==undefined&&!isNaN(ed.adj)?'<span style="color:#2B6CB0;font-weight:600">'+(r.theo+ed.adj).toFixed(2)+'</span>':'<span style="color:#a0aec0">—</span>')+'</td>'+
       '<td>'+reasonCell+'</td>'+
     '</tr>';
   });
@@ -952,7 +953,7 @@ const FMH_MAP={"F-Kit-0290":{"name":"(7 CUT) MYUNGGA ROASTED SEAWEED SHEETS 350 
 
 function exportFMH(branch, month){
   const explData=loadExplData(branch,month);
-  const items=Object.entries(explData).filter(([code,e])=>e.adj!==null&&e.adj!==undefined&&!isNaN(e.adj)&&e.adj!==0);
+  const items=Object.entries(explData).filter(([code,e])=>e.adj!==null&&e.adj!==undefined&&!isNaN(e.adj)&&e.adj!==0&&!isSystemReason(e.reason));
   if(!items.length){ alert('No adjustments filled in.\n\nPlease enter Adj qty values first.'); return; }
 
   // Build CSV content matching StockAction format
@@ -979,12 +980,28 @@ function exportFMH(branch, month){
 
 
 // Preset reason options
-const EXPL_REASONS=[
-  '','Key in wrong quantity','Purchase data conversion wrong',
-  'Forgot to count / missed item','Transfer not recorded',
-  'Wastage not recorded','Spoilage / expired','Returned to supplier',
-  'Others'
-];
+const FMH_REASONS=['Key in wrong quantity','Forgot to count / missed item','Transfer not recorded',
+  'Wastage not recorded','Spoilage / expired','Returned to supplier','Others'];
+const SYSTEM_REASONS=['Purchase data conversion wrong','Combo sales included in count','Recipe/SOP conversion wrong',
+  'System data entry error'];
+const ALL_REASONS=[...FMH_REASONS,...SYSTEM_REASONS];
+const EXPL_REASONS=['', ...ALL_REASONS];
+function isSystemReason(r){ return SYSTEM_REASONS.includes(r); }
+function handleReasonChange(el){
+  var tr=el.closest('tr');
+  if(!tr) return;
+  var sel=tr.querySelector('.expl-select');
+  var adj=tr.querySelector('.expl-adj');
+  if(!sel||!adj) return;
+  var isSys=isSystemReason(sel.value);
+  adj.disabled=isSys;
+  if(isSys){
+    adj.value='';adj.placeholder='N/A';
+    adj.style.background='#f1f5f9';adj.style.color='#94a3b8';adj.style.cursor='not-allowed';
+  } else {
+    adj.placeholder='0.00';adj.style.background='';adj.style.color='';adj.style.cursor='';
+  }
+}
 
 function autoSaveExpl(branch,month){
   const data={};
@@ -1020,23 +1037,42 @@ function renderExplSummary(branch,month){
   const data=loadExplData(branch,month);
   const codes=Object.keys(data).filter(c=>data[c].reason);
   if(!codes.length){ sw.innerHTML=''; return; }
-  const counts={};
-  codes.forEach(c=>{ const r=data[c].reason; counts[r]=(counts[r]||0)+1; });
+  const fmhCounts={}, sysCounts={};
+  codes.forEach(c=>{
+    const r=data[c].reason;
+    if(isSystemReason(r)) sysCounts[r]=(sysCounts[r]||0)+1;
+    else fmhCounts[r]=(fmhCounts[r]||0)+1;
+  });
   const total=codes.length;
-  const sorted=Object.entries(counts).sort((a,b)=>b[1]-a[1]);
-  let cards=sorted.map(([r,n])=>{
-    const pct=Math.round(n/total*100);
-    return '<div class="expl-reason-card">'+
-      '<div class="expl-reason-label">'+r+'</div>'+
-      '<div class="expl-reason-count">'+n+' item'+(n>1?'s':'')+'</div>'+
-      '<div class="expl-reason-pct">'+pct+'% of explained variances</div>'+
-      '<div class="expl-reason-bar"><div class="expl-reason-fill" style="width:'+pct+'%"></div></div>'+
-    '</div>';
-  }).join('');
-  sw.innerHTML='<div class="expl-summary-panel">'+
-    '<div class="expl-summary-hdr">&#128202; Variance Reason Summary — '+total+' item'+(total>1?'s':'')+' explained</div>'+
-    '<div class="expl-reason-grid">'+cards+'</div>'+
-  '</div>';
+  const fmhTotal=Object.values(fmhCounts).reduce((a,b)=>a+b,0);
+  const sysTotal=Object.values(sysCounts).reduce((a,b)=>a+b,0);
+  function makeCards(counts,color,borderColor){
+    return Object.entries(counts).sort((a,b)=>b[1]-a[1]).map(([r,n])=>{
+      const pct=Math.round(n/total*100);
+      return '<div class="expl-reason-card" style="border-left:4px solid '+borderColor+'">'+
+        '<div class="expl-reason-label">'+r+'</div>'+
+        '<div class="expl-reason-count">'+n+' item'+(n>1?'s':'')+'</div>'+
+        '<div class="expl-reason-pct">'+pct+'% of explained variances</div>'+
+        '<div class="expl-reason-bar"><div class="expl-reason-fill" style="width:'+pct+'%;background:'+color+'"></div></div>'+
+      '</div>';
+    }).join('');
+  }
+  let out='<div class="expl-summary-panel">'+
+    '<div class="expl-summary-hdr">&#128202; Variance Reason Summary — '+total+' item'+(total>1?'s':'')+' explained</div>';
+  if(fmhTotal>0){
+    out+='<div style="font-size:12px;font-weight:700;color:#276749;margin:8px 0 6px;display:flex;align-items:center;gap:6px">'+
+      '<span style="display:inline-block;width:12px;height:12px;background:#48bb78;border-radius:3px"></span>'+
+      'Fix in FMH — '+fmhTotal+' item'+(fmhTotal>1?'s':'')+' (will be exported)</div>'+
+      '<div class="expl-reason-grid">'+makeCards(fmhCounts,'#48bb78','#48bb78')+'</div>';
+  }
+  if(sysTotal>0){
+    out+='<div style="font-size:12px;font-weight:700;color:#c53030;margin:12px 0 6px;display:flex;align-items:center;gap:6px">'+
+      '<span style="display:inline-block;width:12px;height:12px;background:#fc8181;border-radius:3px"></span>'+
+      'Fix in System — '+sysTotal+' item'+(sysTotal>1?'s':'')+' (no export needed)</div>'+
+      '<div class="expl-reason-grid">'+makeCards(sysCounts,'#fc8181','#fc8181')+'</div>';
+  }
+  out+='</div>';
+  sw.innerHTML=out;
 }
 
 function populateExplSelect(){
@@ -1079,7 +1115,9 @@ function _renderExplInner(branch,month){
   const saved=loadExplData(branch,month);
   // Sort: losses first (most negative), then gains
   const sorted=[...varRows].sort((a,b)=>a.var_val-b.var_val);
-  const reasonOpts=EXPL_REASONS.map(r=>'<option value="'+r+'">'+( r||'-- Select reason --')+'</option>').join('');
+  const reasonOpts='<option value="">-- Select reason --</option>'+
+    '<optgroup label="Fix in FMH">'+FMH_REASONS.map(r=>'<option value="'+r+'">'+r+'</option>').join('')+'</optgroup>'+
+    '<optgroup label="Fix in System">'+SYSTEM_REASONS.map(r=>'<option value="'+r+'">'+r+'</option>').join('')+'</optgroup>';
   let tbl='<div id="fmh-btn-wrap" style="margin-bottom:10px;text-align:right"></div>'+
     '<div class="expl-wrap"><div class="expl-table-scroll"><table class="expl-table"><thead><tr>'+
     '<th>Code</th><th>Item name</th><th>UOM</th>'+
@@ -1097,14 +1135,16 @@ function _renderExplInner(branch,month){
     const noteVal=(sv.note||'').replace(/"/g,'&quot;');
     const adjVal=sv.adj!==undefined&&sv.adj!==null?sv.adj:'';
     const onchg='autoSaveExpl(document.getElementById(&quot;expl-outlet&quot;).value,document.getElementById(&quot;expl-month&quot;).value)';
-    const selOpts=EXPL_REASONS.map(rx=>'<option value="'+rx+'"'+(rx===reasonVal?' selected':'')+'>'+( rx||'-- Select reason --')+'</option>').join('');
+    const selOpts='<option value=""'+(reasonVal===''?' selected':'')+'>-- Select reason --</option>'+
+      '<optgroup label="Fix in FMH">'+FMH_REASONS.map(rx=>'<option value="'+rx+'"'+(rx===reasonVal?' selected':'')+'>'+rx+'</option>').join('')+'</optgroup>'+
+      '<optgroup label="Fix in System">'+SYSTEM_REASONS.map(rx=>'<option value="'+rx+'"'+(rx===reasonVal?' selected':'')+'>'+rx+'</option>').join('')+'</optgroup>';
     tbl+='<tr data-code="'+r.code+'">'+
       '<td style="font-size:11px;color:#718096;white-space:nowrap">'+r.code+'</td>'+
       '<td style="font-weight:600;color:#1a202c">'+r.name+'</td>'+
       '<td style="color:#718096">'+r.uom+'</td>'+
       '<td class="right '+qc+'">'+fmtQty(r.var_qty)+'</td>'+
       '<td class="right '+vc+'">'+fmt(r.var_val)+'</td>'+
-      '<td><select class="expl-select" onchange="'+onchg+'">'+selOpts+'</select></td>'+
+      '<td><select class="expl-select" onchange="handleReasonChange(this);'+onchg+'">'+selOpts+'</select></td>'+
       '<td><input type="text" class="expl-input expl-note-input" placeholder="Additional notes..." value="'+noteVal+'" onchange="'+onchg+'"></td>'+
       '<td><input type="number" class="expl-input expl-num expl-adj" step="0.01" placeholder="0.00" value="'+adjVal+'" onchange="'+onchg+'"></td>'+
       (function(){
