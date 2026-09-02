@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Heineken Incentive Tracker 2025-2028</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Segoe UI',sans-serif;background:#f1f5f9;color:#1e293b;min-height:100vh}
@@ -111,6 +113,7 @@ td.pos{color:#2563eb}td.neg{color:#ef4444}td.fut{color:#cbd5e0;font-style:italic
     <button class="tab-btn" onclick="switchTab('products',this)">&#127870; Product Breakdown</button>
     <button class="tab-btn" onclick="switchTab('outlets',this)">&#127970; Outlet Performance</button>
     <button class="tab-btn" onclick="switchTab('compare',this)">&#9878; Brand Comparison</button>
+    <button class="tab-btn" onclick="switchTab('incentive',this)">&#128176; Outlet Incentive</button>
   </div>
 </div>
 
@@ -266,16 +269,48 @@ td.pos{color:#2563eb}td.neg{color:#ef4444}td.fut{color:#cbd5e0;font-style:italic
 </div>
 </div>
 
+
+<!-- PAGE 5: OUTLET INCENTIVE BREAKDOWN -->
+<div id="page-incentive" class="page">
+<div class="main">
+  <div class="pb2-controls">
+    <span class="pb2-label">Select Month:</span>
+    <select class="pb2-select" id="incMonthSelect" onchange="renderIncentivePage()">
+      <option value="ALL">All Months (Dec 2025 – Aug 2026)</option>
+    </select>
+    <button onclick="downloadIncentivePDF()" id="pdfBtn" style="margin-left:auto;padding:9px 20px;background:linear-gradient(135deg,#1565c0,#1976d2);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:8px;box-shadow:0 2px 8px rgba(21,101,192,.3);transition:opacity .2s" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
+      &#128196; Download PDF
+    </button>
+  </div>
+
+  <div class="pb2-kpi-row">
+    <div class="pb2-kpi" style="--c:#39d353"><div class="lbl">Total Incentive (All Outlets)</div><div class="val" id="inc2total" style="font-size:20px">--</div><div class="sub" id="inc2period">selected period</div></div>
+    <div class="pb2-kpi" style="--c:#f0a500"><div class="lbl">No. of Outlets</div><div class="val" id="inc2count">--</div><div class="sub">active outlets</div></div>
+    <div class="pb2-kpi" style="--c:#58a6ff"><div class="lbl">Top Outlet</div><div class="val" id="inc2top" style="font-size:13px;line-height:1.3;margin-top:2px">--</div><div class="sub" id="inc2topval">RM</div></div>
+    <div class="pb2-kpi" style="--c:#f85149"><div class="lbl">Lowest Outlet</div><div class="val" id="inc2bot" style="font-size:13px;line-height:1.3;margin-top:2px">--</div><div class="sub" id="inc2botval">RM</div></div>
+  </div>
+
+  <div class="section-title" id="inc2tableTitle">Outlet Incentive Breakdown (RM)</div>
+  <div class="table-card" style="overflow-x:auto">
+    <table id="inc2table" style="min-width:900px">
+      <thead id="inc2thead"></thead>
+      <tbody id="inc2tbody"></tbody>
+      <tfoot id="inc2tfoot"></tfoot>
+    </table>
+  </div>
+</div>
+</div>
+
 <div class="footer">Data source: GRN date &amp; Invoice Quantity from purchase records &nbsp;|&nbsp; Upload new purchase CSV each month to refresh</div>
 
 <script>
 // ─── DATA ───────────────────────────────────────────────
 const T=2880, NMONTHS=36, MT=T/NMONTHS;
 
-const MD={"2025-12":74.964,"2026-01":53.5604,"2026-02":61.9244,"2026-03":46.41,"2026-04":46.9352,"2026-05":55.4244,"2026-06":45.332,"2026-07":44.7828,"2026-08":0.9336};
+const MD={"2025-12":74.964,"2026-01":53.846,"2026-02":63.0644,"2026-03":46.41,"2026-04":46.9352,"2026-05":55.4244,"2026-06":45.332,"2026-07":44.7828,"2026-08":57.7192};
 
 // Per-month product HL breakdown
-const MPD={"2025-12":{"Edelweiss Can":3.456,"Tiger Pint":29.718,"Tiger Soju Can":3.072,"Heineken 5L Keg":0.2,"Shandy Anglia":0.384,"Heineken Pint":19.968,"Guinness 10L Keg":0.8,"Heineken 10L Keg":0.7,"Tiger Can":1.152,"Fox Cider Pint":2.574,"Guinness Pint":9.984,"Tiger 30L Keg":2.4,"Kilkenny 10L Keg":0.4,"Tiger Soju Pint":0.156},"2026-01":{"Edelweiss Can":1.6896,"Fox Cider Pint":1.638,"Guinness 10L Keg":2.0,"Heineken 10L Keg":0.8,"Heineken 5L Keg":2.1,"Tiger 30L Keg":2.4,"Guinness Pint":0.702,"Heineken Pint":8.97,"Tiger Pint":28.86,"Tiger Can":1.6128,"Tiger Soju Can":0.9216,"Shandy Anglia":1.3824,"Fox Cider Can":0.384,"Kilkenny 10L Keg":0.1},"2026-02":{"Edelweiss Can":2.3808,"Fox Cider Can":0.0768,"Fox Cider Pint":2.652,"Guinness 10L Keg":0.3,"Guinness Pint":2.574,"Heineken 10L Keg":0.3,"Heineken 5L Keg":0.75,"Heineken Pint":15.054,"Kilkenny 10L Keg":0.2,"Tiger 30L Keg":2.1,"Tiger Can":0.9216,"Tiger Pint":33.54,"Tiger Soju Can":1.0752},"2026-03":{"Edelweiss Can":1.4592,"Fox Cider Pint":1.404,"Guinness Pint":3.744,"Heineken Pint":11.154,"Tiger 30L Keg":0.9,"Tiger Pint":26.52,"Tiger Soju Can":1.2288},"2026-04":{"Edelweiss Can":1.152,"Fox Cider Pint":1.482,"Guinness 10L Keg":0.5,"Guinness Pint":2.106,"Heineken 10L Keg":0.3,"Heineken Pint":8.736,"Kilkenny 10L Keg":0.3,"Tiger 30L Keg":1.8,"Tiger Pint":29.484,"Tiger Soju Can":1.0752},"2026-05":{"Edelweiss Can":1.8816,"Fox Cider Pint":2.028,"Guinness 10L Keg":0.7,"Guinness Pint":4.212,"Heineken 10L Keg":0.4,"Heineken Pint":12.402,"Kilkenny 10L Keg":0.1,"Tiger 30L Keg":1.5,"Tiger Pint":31.356,"Tiger Soju Can":0.8448},"2026-06":{"Edelweiss Can":1.2288,"Fox Cider Pint":1.092,"Guinness 10L Keg":0.5,"Guinness Pint":2.496,"Heineken 10L Keg":0.2,"Heineken Pint":8.502,"Kilkenny 10L Keg":0.1,"Tiger 30L Keg":1.5,"Tiger Pint":29.406,"Tiger Soju Can":0.3072},"2026-07":{"Edelweiss Can":1.536,"Fox Cider Pint":0.234,"Guinness 10L Keg":0.5,"Guinness Pint":3.12,"Heineken 10L Keg":0.4,"Heineken Pint":9.282,"Tiger 30L Keg":2.1,"Tiger Pint":27.534,"Tiger Soju Can":0.0768},"2026-08":{"Edelweiss Can":0.1536,"Tiger Pint":0.78}};
+const MPD={"2025-12":{"Edelweiss Can":3.456,"Tiger Pint":29.718,"Tiger Soju Can":3.072,"Heineken 5L Keg":0.2,"Shandy Anglia":0.384,"Heineken Pint":19.968,"Guinness 10L Keg":0.8,"Heineken 10L Keg":0.7,"Tiger Can":1.152,"Fox Cider Pint":2.574,"Guinness Pint":9.984,"Tiger 30L Keg":2.4,"Kilkenny 10L Keg":0.4,"Tiger Soju Pint":0.156},"2026-01":{"Heineken 5L Keg":3.0,"Heineken Pint":8.97,"Tiger Pint":28.86,"Fox Cider Pint":1.638,"Shandy Anglia":1.3056,"Edelweiss Can":1.6896,"Guinness Pint":0.702,"Tiger Soju Can":0.8448,"Tiger Can":1.3056,"Fox Cider Can":0.2304,"Guinness 10L Keg":2.0,"Heineken 10L Keg":0.8,"Kilkenny 10L Keg":0.1,"Tiger 30L Keg":2.4},"2026-02":{"Tiger Pint":33.93,"Heineken Pint":15.054,"Tiger Can":0.9216,"Fox Cider Pint":2.652,"Edelweiss Can":2.3808,"Guinness Pint":2.574,"Fox Cider Can":0.0768,"Tiger Soju Can":1.0752,"Heineken 5L Keg":1.5,"Guinness 10L Keg":0.3,"Heineken 10L Keg":0.3,"Tiger 30L Keg":2.1,"Kilkenny 10L Keg":0.2},"2026-03":{"Tiger Pint":26.52,"Edelweiss Can":1.4592,"Guinness Pint":3.744,"Heineken Pint":11.154,"Tiger Soju Can":1.2288,"Fox Cider Pint":1.404,"Tiger 30L Keg":0.9},"2026-04":{"Edelweiss Can":1.152,"Guinness Pint":2.106,"Heineken Pint":8.736,"Tiger Pint":29.484,"Tiger Soju Can":1.0752,"Guinness 10L Keg":0.5,"Heineken 10L Keg":0.3,"Tiger 30L Keg":1.8,"Fox Cider Pint":1.482,"Kilkenny 10L Keg":0.3},"2026-05":{"Edelweiss Can":1.8816,"Guinness Pint":4.212,"Heineken Pint":12.402,"Tiger Pint":31.356,"Fox Cider Pint":2.028,"Tiger Soju Can":0.8448,"Guinness 10L Keg":0.7,"Heineken 10L Keg":0.4,"Tiger 30L Keg":1.5,"Kilkenny 10L Keg":0.1},"2026-06":{"Tiger Pint":29.406,"Guinness Pint":2.496,"Heineken Pint":8.502,"Edelweiss Can":1.2288,"Fox Cider Pint":1.092,"Tiger Soju Can":0.3072,"Guinness 10L Keg":0.5,"Heineken 10L Keg":0.2,"Tiger 30L Keg":1.5,"Kilkenny 10L Keg":0.1},"2026-07":{"Heineken Pint":9.282,"Tiger Pint":27.534,"Tiger 30L Keg":2.1,"Guinness Pint":3.12,"Fox Cider Pint":0.234,"Edelweiss Can":1.536,"Tiger Soju Can":0.0768,"Guinness 10L Keg":0.5,"Heineken 10L Keg":0.4},"2026-08":{"Edelweiss Can":2.6112,"Guinness Pint":3.354,"Heineken Pint":13.182,"Tiger Pint":33.384,"Fox Cider Can":2.688,"Guinness 10L Keg":0.4,"Heineken 10L Keg":0.3,"Kilkenny 10L Keg":0.3,"Tiger 30L Keg":1.5}};
 
 // Full product meta (name → incentive per HL)
 const PMETA={
@@ -348,6 +383,7 @@ function switchTab(name,btn){
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById('page-'+name).classList.add('active');
   btn.classList.add('active');
+  if(name==='incentive')renderIncentivePage();
 }
 
 // ─── PAGE 1: DASHBOARD ─────────────────────────────────
@@ -506,7 +542,7 @@ function renderProductPage(){
 renderProductPage();
 
 // Per-outlet, per-month, per-product HL
-const OPD={"Loud Speaker @ Ampang":{"2025-12":{"Guinness Pint":0.39,"Heineken Pint":0.624,"Tiger Soju Can":0.2304,"Edelweiss Can":0.1536,"Tiger Pint":0.234,"Fox Cider Pint":0.156},"2026-01":{"Tiger Can":0.0768,"Heineken 5L Keg":0.1,"Shandy Anglia":0.0768},"2026-02":{"Heineken Pint":0.234,"Tiger Pint":0.156},"2026-03":{"Heineken Pint":0.234,"Tiger Pint":0.234},"2026-04":{"Heineken Pint":0.156,"Tiger Pint":0.156},"2026-05":{"Fox Cider Pint":0.078,"Tiger Pint":0.39,"Tiger Soju Can":0.1536},"2026-07":{"Heineken Pint":0.156,"Tiger Pint":0.234}},"Loud Speaker @ C180":{"2025-12":{"Edelweiss Can":0.3072,"Guinness Pint":0.936,"Heineken Pint":1.326,"Tiger Pint":2.652,"Tiger Soju Can":0.2304,"Fox Cider Pint":0.156},"2026-01":{"Guinness Pint":0.156,"Heineken Pint":0.624,"Tiger Pint":2.34,"Fox Cider Pint":0.078,"Heineken 5L Keg":0.1,"Shandy Anglia":0.1536},"2026-02":{"Edelweiss Can":0.3072,"Fox Cider Pint":0.156,"Guinness Pint":0.312,"Heineken Pint":0.312,"Tiger Pint":2.73},"2026-03":{"Edelweiss Can":0.384,"Fox Cider Pint":0.624,"Guinness Pint":1.56,"Heineken Pint":1.95,"Tiger Pint":3.12,"Tiger Soju Can":0.384},"2026-04":{"Tiger Pint":0.78},"2026-05":{"Heineken Pint":0.858,"Tiger Pint":2.184},"2026-06":{"Guinness Pint":0.234,"Heineken Pint":0.546,"Tiger Pint":2.73},"2026-07":{"Fox Cider Pint":0.0,"Guinness Pint":0.546,"Heineken Pint":0.39,"Tiger Pint":3.12}},"Loud Speaker @ Georgetown":{"2025-12":{"Edelweiss Can":0.4608,"Guinness Pint":0.78,"Heineken Pint":1.56,"Tiger Pint":1.56,"Tiger Soju Can":0.4608,"Fox Cider Pint":0.156},"2026-01":{"Edelweiss Can":0.1536,"Heineken Pint":0.39,"Tiger Pint":2.34,"Heineken 5L Keg":0.15,"Tiger Can":0.1536,"Shandy Anglia":0.1536},"2026-02":{"Edelweiss Can":0.0768,"Fox Cider Pint":0.234,"Guinness Pint":0.078,"Heineken Pint":0.702,"Tiger Can":0.768,"Tiger Pint":2.34,"Tiger Soju Can":0.0768},"2026-03":{"Edelweiss Can":0.1536,"Fox Cider Pint":0.078,"Guinness Pint":0.234,"Heineken Pint":0.936,"Tiger Pint":2.028,"Tiger Soju Can":0.1536},"2026-04":{"Edelweiss Can":0.2304,"Fox Cider Pint":0.234,"Guinness Pint":0.39,"Heineken Pint":1.17,"Tiger Pint":2.964,"Tiger Soju Can":0.2304},"2026-05":{"Edelweiss Can":0.2304,"Fox Cider Pint":0.312,"Guinness Pint":0.39,"Heineken Pint":1.092,"Tiger Pint":2.964},"2026-06":{"Edelweiss Can":0.1536,"Guinness Pint":0.312,"Heineken Pint":0.78,"Tiger Pint":2.34},"2026-07":{"Edelweiss Can":0.1536,"Heineken Pint":1.014,"Tiger Pint":2.886,"Tiger Soju Can":0.0}},"Loud Speaker @ Kepong":{"2025-12":{"Tiger Pint":5.46,"Guinness Pint":3.354,"Heineken Pint":2.964,"Edelweiss Can":0.384,"Tiger Soju Can":0.384,"Fox Cider Pint":0.39},"2026-01":{"Tiger Pint":7.41,"Heineken 5L Keg":0.2,"Heineken Pint":1.17,"Edelweiss Can":0.0768,"Tiger Can":0.0768,"Tiger Soju Can":0.0768,"Shandy Anglia":0.0768},"2026-02":{"Edelweiss Can":0.5376,"Fox Cider Pint":0.78,"Heineken 5L Keg":0.15,"Heineken Pint":2.34,"Tiger Pint":8.58,"Tiger Soju Can":0.384},"2026-03":{"Guinness Pint":0.78,"Heineken Pint":1.95,"Tiger Pint":7.02},"2026-04":{"Edelweiss Can":0.2304,"Guinness Pint":0.39,"Heineken Pint":0.39,"Tiger Pint":8.19,"Tiger Soju Can":0.0768},"2026-05":{"Edelweiss Can":0.4608,"Guinness Pint":1.482,"Heineken Pint":2.106,"Tiger Pint":8.19},"2026-06":{"Edelweiss Can":0.0768,"Fox Cider Pint":0.234,"Guinness Pint":0.39,"Heineken Pint":2.028,"Tiger Pint":7.8,"Tiger Soju Can":0.1536},"2026-07":{"Guinness Pint":1.014,"Heineken Pint":1.56,"Tiger Pint":7.02}},"Loud Speaker @ Lowyat":{"2025-12":{"Heineken Pint":2.34,"Tiger Pint":3.51,"Guinness 10L Keg":0.8,"Heineken 10L Keg":0.7,"Edelweiss Can":0.0768,"Tiger Can":0.0768,"Tiger Soju Can":0.0768,"Heineken 5L Keg":0.1,"Shandy Anglia":0.0768,"Tiger 30L Keg":2.4,"Kilkenny 10L Keg":0.4,"Tiger Soju Pint":0.156,"Fox Cider Pint":0.156},"2026-01":{"Fox Cider Pint":0.78,"Guinness 10L Keg":2.0,"Heineken 10L Keg":0.8,"Heineken 5L Keg":0.05,"Tiger 30L Keg":2.4,"Heineken Pint":0.78,"Tiger Pint":3.12,"Kilkenny 10L Keg":0.1},"2026-02":{"Guinness 10L Keg":0.3,"Heineken 10L Keg":0.3,"Heineken 5L Keg":0.15,"Heineken Pint":1.56,"Kilkenny 10L Keg":0.2,"Tiger 30L Keg":2.1,"Tiger Pint":3.9},"2026-03":{"Heineken Pint":0.78,"Tiger 30L Keg":0.9,"Tiger Pint":2.34},"2026-04":{"Guinness 10L Keg":0.5,"Heineken 10L Keg":0.3,"Heineken Pint":1.17,"Kilkenny 10L Keg":0.3,"Tiger 30L Keg":1.8,"Tiger Pint":3.9},"2026-05":{"Fox Cider Pint":0.39,"Guinness 10L Keg":0.7,"Heineken 10L Keg":0.4,"Heineken Pint":0.78,"Kilkenny 10L Keg":0.1,"Tiger 30L Keg":1.5,"Tiger Pint":1.17},"2026-06":{"Guinness 10L Keg":0.5,"Heineken 10L Keg":0.2,"Heineken Pint":0.624,"Kilkenny 10L Keg":0.1,"Tiger 30L Keg":1.5,"Tiger Pint":3.12},"2026-07":{"Guinness 10L Keg":0.5,"Heineken 10L Keg":0.4,"Heineken Pint":1.17,"Tiger 30L Keg":2.1,"Tiger Pint":1.95}},"Loud Speaker @ Mount Austin":{"2025-12":{"Edelweiss Can":0.3072,"Tiger Pint":2.028,"Tiger Soju Can":0.1536,"Fox Cider Pint":0.39,"Heineken Pint":1.95,"Guinness Pint":0.312},"2026-01":{"Edelweiss Can":0.6144,"Guinness Pint":0.078,"Tiger Pint":2.574,"Heineken Pint":1.404,"Tiger Soju Can":0.5376,"Fox Cider Can":0.2304,"Heineken 5L Keg":0.2,"Fox Cider Pint":0.234,"Shandy Anglia":0.3072,"Tiger Can":0.3072},"2026-02":{"Edelweiss Can":0.4608,"Fox Cider Pint":0.312,"Guinness Pint":0.702,"Heineken Pint":1.872,"Tiger Pint":1.638,"Tiger Soju Can":0.2304},"2026-03":{"Edelweiss Can":0.3072,"Fox Cider Pint":0.156,"Guinness Pint":0.156,"Heineken Pint":1.95,"Tiger Pint":2.574,"Tiger Soju Can":0.2304},"2026-04":{"Edelweiss Can":0.1536,"Fox Cider Pint":0.156,"Guinness Pint":0.156,"Heineken Pint":1.872,"Tiger Pint":2.418,"Tiger Soju Can":0.0768},"2026-05":{"Edelweiss Can":0.2304,"Fox Cider Pint":0.39,"Guinness Pint":0.39,"Heineken Pint":1.638,"Tiger Pint":3.12,"Tiger Soju Can":0.2304},"2026-06":{"Edelweiss Can":0.5376,"Fox Cider Pint":0.39,"Guinness Pint":0.234,"Heineken Pint":1.56,"Tiger Pint":1.638,"Tiger Soju Can":0.1536},"2026-07":{"Edelweiss Can":0.768,"Fox Cider Pint":0.156,"Guinness Pint":0.234,"Heineken Pint":1.092,"Tiger Pint":3.042}},"Loud Speaker @ Mytown":{"2025-12":{"Guinness Pint":0.546,"Heineken Pint":0.39,"Tiger Pint":1.326,"Tiger Soju Can":0.2304,"Edelweiss Can":0.2304,"Fox Cider Pint":0.156},"2026-01":{"Tiger Can":0.384,"Heineken Pint":0.624,"Edelweiss Can":0.0768,"Tiger Pint":0.234,"Heineken 5L Keg":0.05,"Shandy Anglia":0.0768},"2026-02":{"Edelweiss Can":0.0768,"Heineken Pint":0.312,"Tiger Pint":0.936},"2026-03":{"Heineken Pint":0.078,"Tiger Pint":0.39},"2026-04":{"Fox Cider Pint":0.078,"Guinness Pint":0.156,"Tiger Pint":0.39},"2026-05":{"Edelweiss Can":0.0768,"Fox Cider Pint":0.078,"Guinness Pint":0.156,"Heineken Pint":0.624,"Tiger Pint":0.78,"Tiger Soju Can":0.0768},"2026-06":{"Guinness Pint":0.156,"Heineken Pint":0.312,"Tiger Pint":0.702},"2026-07":{"Guinness Pint":0.156,"Heineken Pint":0.156,"Tiger Pint":0.234}},"Loud Speaker @ Puchong":{"2025-12":{"Edelweiss Can":0.2304,"Guinness Pint":0.78,"Heineken Pint":0.78,"Tiger Pint":1.17,"Fox Cider Pint":0.234},"2026-01":{"Heineken 5L Keg":0.2,"Tiger Can":0.1536,"Tiger Pint":0.546,"Tiger Soju Can":0.1536,"Shandy Anglia":0.1536},"2026-02":{"Edelweiss Can":0.1536,"Fox Cider Pint":0.39,"Heineken 5L Keg":0.3,"Heineken Pint":2.028,"Tiger Can":0.1536,"Tiger Pint":2.184},"2026-04":{"Tiger Pint":1.17,"Tiger Soju Can":0.3072},"2026-05":{"Fox Cider Pint":0.078,"Guinness Pint":0.312,"Heineken Pint":0.78,"Tiger Pint":1.716},"2026-06":{"Tiger Pint":1.794}},"Loud Speaker @ Setapak":{"2025-12":{"Tiger Pint":2.886,"Heineken 5L Keg":0.1,"Shandy Anglia":0.1536,"Guinness Pint":0.546,"Heineken Pint":1.404,"Edelweiss Can":0.1536,"Tiger Soju Can":0.1536,"Fox Cider Pint":0.156},"2026-01":{"Edelweiss Can":0.0768,"Tiger Pint":1.56,"Tiger Can":0.1536,"Heineken 5L Keg":0.2},"2026-02":{"Edelweiss Can":0.0768,"Fox Cider Pint":0.078,"Guinness Pint":0.234,"Heineken Pint":0.858,"Tiger Pint":1.794},"2026-03":{"Edelweiss Can":0.1536,"Guinness Pint":0.312,"Heineken Pint":0.78,"Tiger Pint":2.34,"Tiger Soju Can":0.0768},"2026-04":{"Fox Cider Pint":0.078,"Guinness Pint":0.078,"Heineken Pint":0.468,"Tiger Pint":1.17},"2026-05":{"Edelweiss Can":0.0768,"Fox Cider Pint":0.078,"Guinness Pint":0.546,"Heineken Pint":0.468,"Tiger Pint":1.404,"Tiger Soju Can":0.0768},"2026-06":{"Heineken Pint":0.234,"Tiger Pint":1.95},"2026-07":{"Tiger Pint":0.468}},"Loud Speaker @ Sri Petaling":{"2025-12":{"Edelweiss Can":0.3072,"Tiger Pint":2.106,"Heineken Pint":1.56,"Tiger Can":0.5376,"Guinness Pint":0.39,"Tiger Soju Can":0.1536,"Fox Cider Pint":0.156},"2026-01":{"Guinness Pint":0.156,"Heineken Pint":0.156,"Tiger Pint":0.702,"Edelweiss Can":0.2304},"2026-02":{"Edelweiss Can":0.1536,"Fox Cider Can":0.0768,"Fox Cider Pint":0.234,"Guinness Pint":0.39,"Heineken 5L Keg":0.05,"Heineken Pint":1.17,"Tiger Pint":2.574},"2026-03":{"Heineken Pint":0.39,"Tiger Pint":0.78,"Tiger Soju Can":0.1536},"2026-04":{"Fox Cider Pint":0.156,"Guinness Pint":0.39,"Heineken Pint":0.702,"Tiger Pint":1.95},"2026-05":{"Edelweiss Can":0.1536,"Fox Cider Pint":0.156,"Guinness Pint":0.156,"Heineken Pint":0.78,"Tiger Pint":1.95,"Tiger Soju Can":0.0768},"2026-06":{"Edelweiss Can":0.1536,"Fox Cider Pint":0.0,"Guinness Pint":0.624,"Heineken Pint":0.78,"Tiger Pint":1.716,"Tiger Soju Can":0.0},"2026-07":{"Guinness Pint":0.156,"Heineken Pint":0.936,"Tiger Pint":2.34,"Tiger Soju Can":0.0768}},"Loud Speaker @ Subang":{"2025-12":{"Tiger Can":0.384,"Shandy Anglia":0.0768,"Edelweiss Can":0.1536,"Heineken Pint":0.624,"Guinness Pint":0.39,"Tiger Pint":0.78,"Tiger Soju Can":0.1536,"Fox Cider Pint":0.156},"2026-01":{"Heineken Pint":1.17,"Tiger Pint":2.964,"Fox Cider Pint":0.156,"Edelweiss Can":0.0768,"Guinness Pint":0.234,"Heineken 5L Keg":0.3},"2026-02":{"Edelweiss Can":0.2304,"Guinness Pint":0.39,"Heineken 5L Keg":0.05,"Heineken Pint":0.39,"Tiger Pint":1.794,"Tiger Soju Can":0.1536},"2026-03":{"Edelweiss Can":0.1536,"Fox Cider Pint":0.078,"Guinness Pint":0.156,"Heineken Pint":0.468,"Tiger Pint":1.638},"2026-04":{"Edelweiss Can":0.1536,"Fox Cider Pint":0.234,"Guinness Pint":0.234,"Heineken Pint":0.702,"Tiger Pint":2.652,"Tiger Soju Can":0.0768},"2026-05":{"Edelweiss Can":0.2304,"Fox Cider Pint":0.156,"Heineken Pint":0.78,"Tiger Pint":2.574,"Tiger Soju Can":0.0768},"2026-06":{"Guinness Pint":0.312,"Heineken Pint":0.468,"Tiger Pint":2.34},"2026-07":{"Edelweiss Can":0.384,"Guinness Pint":0.468,"Heineken Pint":0.468,"Tiger Pint":2.574}},"Loud Speaker @ Sunway Carnival":{"2025-12":{"Tiger Pint":1.56,"Edelweiss Can":0.2304,"Guinness Pint":0.234,"Heineken Pint":0.78,"Tiger Soju Can":0.1536},"2026-01":{"Edelweiss Can":0.2304,"Tiger Pint":1.17,"Tiger Can":0.1536,"Tiger Soju Can":0.0768,"Heineken 5L Keg":0.1,"Shandy Anglia":0.2304,"Guinness Pint":0.078,"Heineken Pint":0.39},"2026-02":{"Guinness Pint":0.234,"Heineken Pint":0.858,"Tiger Pint":1.17},"2026-03":{"Fox Cider Pint":0.156,"Guinness Pint":0.078,"Heineken Pint":0.39,"Tiger Pint":0.39},"2026-04":{"Edelweiss Can":0.0768,"Fox Cider Pint":0.078,"Guinness Pint":0.078,"Heineken Pint":0.702,"Tiger Pint":0.78,"Tiger Soju Can":0.0},"2026-05":{"Edelweiss Can":0.1152,"Fox Cider Pint":0.156,"Guinness Pint":0.312,"Heineken Pint":0.858,"Tiger Pint":1.56},"2026-07":{"Edelweiss Can":0.0768,"Fox Cider Pint":0.078,"Guinness Pint":0.078,"Heineken Pint":0.468,"Tiger Pint":0.78}},"Loud Speaker @ Taman Sutera":{"2025-12":{"Guinness Pint":0.546,"Heineken Pint":2.106,"Tiger Pint":2.106,"Edelweiss Can":0.1536,"Tiger Soju Can":0.1536,"Fox Cider Pint":0.156},"2026-01":{"Heineken Pint":1.872,"Tiger Pint":1.56,"Tiger Soju Can":0.0768,"Shandy Anglia":0.1536,"Edelweiss Can":0.1536,"Tiger Can":0.1536,"Fox Cider Can":0.1536,"Heineken 5L Keg":0.25,"Fox Cider Pint":0.39},"2026-02":{"Edelweiss Can":0.3072,"Fox Cider Pint":0.312,"Guinness Pint":0.234,"Heineken Pint":1.638,"Tiger Pint":1.794,"Tiger Soju Can":0.2304},"2026-03":{"Edelweiss Can":0.0768,"Fox Cider Pint":0.078,"Guinness Pint":0.078,"Heineken Pint":0.468,"Tiger Pint":1.716},"2026-04":{"Edelweiss Can":0.3072,"Fox Cider Pint":0.468,"Guinness Pint":0.234,"Heineken Pint":1.014,"Tiger Pint":1.404,"Tiger Soju Can":0.3072},"2026-05":{"Edelweiss Can":0.1536,"Fox Cider Pint":0.156,"Guinness Pint":0.078,"Heineken Pint":0.858,"Tiger Pint":1.404},"2026-06":{"Edelweiss Can":0.2304,"Fox Cider Pint":0.312,"Guinness Pint":0.234,"Heineken Pint":1.17,"Tiger Pint":1.716},"2026-07":{"Edelweiss Can":0.1536,"Guinness Pint":0.234,"Heineken Pint":1.092,"Tiger Pint":1.716}},"Loud Speaker @ Tropicana":{"2025-12":{"Edelweiss Can":0.3072,"Heineken Pint":1.56,"Tiger Pint":2.34,"Tiger Can":0.1536,"Tiger Soju Can":0.5376,"Shandy Anglia":0.0768,"Guinness Pint":0.78,"Fox Cider Pint":0.156},"2026-01":{"Tiger Pint":2.34,"Heineken Pint":0.39,"Heineken 5L Keg":0.2},"2026-02":{"Fox Cider Pint":0.156,"Heineken 5L Keg":0.05,"Heineken Pint":0.78,"Tiger Pint":1.95},"2026-03":{"Edelweiss Can":0.2304,"Fox Cider Pint":0.234,"Guinness Pint":0.39,"Heineken Pint":0.78,"Tiger Pint":1.95,"Tiger Soju Can":0.2304},"2026-04":{"Heineken Pint":0.39,"Tiger Pint":1.56},"2026-05":{"Edelweiss Can":0.1536,"Guinness Pint":0.39,"Heineken Pint":0.78,"Tiger Pint":1.95,"Tiger Soju Can":0.1536},"2026-06":{"Edelweiss Can":0.0768,"Fox Cider Pint":0.156,"Tiger Pint":1.56},"2026-07":{"Guinness Pint":0.234,"Heineken Pint":0.78,"Tiger Pint":1.17},"2026-08":{"Edelweiss Can":0.1536,"Tiger Pint":0.78}}};
+const OPD={"Loud Speaker @ Kepong":{"2025-12":{"Tiger Pint":5.46,"Guinness Pint":3.354,"Heineken Pint":2.964,"Edelweiss Can":0.384,"Tiger Soju Can":0.384,"Fox Cider Pint":0.39},"2026-01":{"Tiger Pint":7.41,"Edelweiss Can":0.0768,"Tiger Can":0.0768,"Tiger Soju Can":0.0768,"Shandy Anglia":0.0768,"Heineken 5L Keg":0.4,"Heineken Pint":1.17},"2026-02":{"Edelweiss Can":0.5376,"Heineken Pint":2.34,"Tiger Pint":8.58,"Heineken 5L Keg":0.3,"Tiger Soju Can":0.384,"Fox Cider Pint":0.78},"2026-03":{"Tiger Pint":7.02,"Guinness Pint":0.78,"Heineken Pint":1.95},"2026-04":{"Edelweiss Can":0.2304,"Guinness Pint":0.39,"Heineken Pint":0.39,"Tiger Pint":8.19,"Tiger Soju Can":0.0768},"2026-05":{"Edelweiss Can":0.4608,"Guinness Pint":1.482,"Heineken Pint":2.106,"Tiger Pint":8.19},"2026-06":{"Edelweiss Can":0.0768,"Heineken Pint":2.028,"Tiger Pint":7.8,"Fox Cider Pint":0.234,"Guinness Pint":0.39,"Tiger Soju Can":0.1536},"2026-07":{"Guinness Pint":1.014,"Heineken Pint":1.56,"Tiger Pint":7.02},"2026-08":{"Heineken Pint":1.95,"Tiger Pint":7.02,"Edelweiss Can":0.3072,"Guinness Pint":0.78,"Fox Cider Can":0.2304}},"Loud Speaker @ Lowyat":{"2025-12":{"Heineken Pint":2.34,"Tiger Pint":3.51,"Guinness 10L Keg":0.8,"Heineken 10L Keg":0.7,"Edelweiss Can":0.0768,"Tiger Can":0.0768,"Tiger Soju Can":0.0768,"Heineken 5L Keg":0.1,"Shandy Anglia":0.0768,"Tiger 30L Keg":2.4,"Kilkenny 10L Keg":0.4,"Tiger Soju Pint":0.156,"Fox Cider Pint":0.156},"2026-01":{"Tiger Pint":3.12,"Guinness 10L Keg":2.0,"Heineken 10L Keg":0.8,"Kilkenny 10L Keg":0.1,"Tiger 30L Keg":2.4,"Heineken Pint":0.78,"Fox Cider Pint":0.78,"Heineken 5L Keg":0.1},"2026-02":{"Tiger Pint":3.9,"Heineken Pint":1.56,"Guinness 10L Keg":0.3,"Heineken 10L Keg":0.3,"Tiger 30L Keg":2.1,"Heineken 5L Keg":0.3,"Kilkenny 10L Keg":0.2},"2026-03":{"Heineken Pint":0.78,"Tiger Pint":2.34,"Tiger 30L Keg":0.9},"2026-04":{"Tiger Pint":3.9,"Guinness 10L Keg":0.5,"Heineken 10L Keg":0.3,"Tiger 30L Keg":1.8,"Heineken Pint":1.17,"Kilkenny 10L Keg":0.3},"2026-05":{"Guinness 10L Keg":0.7,"Heineken 10L Keg":0.4,"Tiger 30L Keg":1.5,"Heineken Pint":0.78,"Tiger Pint":1.17,"Fox Cider Pint":0.39,"Kilkenny 10L Keg":0.1},"2026-06":{"Heineken Pint":0.624,"Tiger Pint":3.12,"Guinness 10L Keg":0.5,"Heineken 10L Keg":0.2,"Tiger 30L Keg":1.5,"Kilkenny 10L Keg":0.1},"2026-07":{"Heineken Pint":1.17,"Tiger Pint":1.95,"Tiger 30L Keg":2.1,"Guinness 10L Keg":0.5,"Heineken 10L Keg":0.4},"2026-08":{"Heineken Pint":1.17,"Tiger Pint":1.95,"Fox Cider Can":0.384,"Guinness 10L Keg":0.4,"Heineken 10L Keg":0.3,"Kilkenny 10L Keg":0.3,"Tiger 30L Keg":1.5}},"Loud Speaker @ Subang":{"2025-12":{"Tiger Can":0.384,"Shandy Anglia":0.0768,"Edelweiss Can":0.1536,"Heineken Pint":0.624,"Guinness Pint":0.39,"Tiger Pint":0.78,"Tiger Soju Can":0.1536,"Fox Cider Pint":0.156},"2026-01":{"Tiger Pint":2.964,"Heineken 5L Keg":0.3,"Heineken Pint":1.17,"Edelweiss Can":0.0768,"Guinness Pint":0.234,"Fox Cider Pint":0.156},"2026-02":{"Edelweiss Can":0.2304,"Guinness Pint":0.39,"Heineken Pint":0.39,"Tiger Pint":1.794,"Heineken 5L Keg":0.1,"Tiger Soju Can":0.1536},"2026-03":{"Heineken Pint":0.468,"Tiger Pint":1.638,"Fox Cider Pint":0.078,"Guinness Pint":0.156,"Edelweiss Can":0.1536},"2026-04":{"Heineken Pint":0.702,"Tiger Pint":2.652,"Fox Cider Pint":0.234,"Guinness Pint":0.234,"Edelweiss Can":0.1536,"Tiger Soju Can":0.0768},"2026-05":{"Edelweiss Can":0.2304,"Heineken Pint":0.78,"Tiger Pint":2.574,"Tiger Soju Can":0.0768,"Fox Cider Pint":0.156},"2026-06":{"Guinness Pint":0.312,"Heineken Pint":0.468,"Tiger Pint":2.34},"2026-07":{"Guinness Pint":0.468,"Tiger Pint":2.574,"Heineken Pint":0.468,"Edelweiss Can":0.384},"2026-08":{"Guinness Pint":0.312,"Heineken Pint":1.17,"Tiger Pint":2.808,"Fox Cider Can":0.3072}},"Loud Speaker @ C180":{"2025-12":{"Edelweiss Can":0.3072,"Guinness Pint":0.936,"Heineken Pint":1.326,"Tiger Pint":2.652,"Tiger Soju Can":0.2304,"Fox Cider Pint":0.156},"2026-01":{"Heineken Pint":0.624,"Tiger Pint":2.34,"Fox Cider Pint":0.078,"Heineken 5L Keg":0.1,"Shandy Anglia":0.1536,"Guinness Pint":0.156},"2026-02":{"Edelweiss Can":0.3072,"Tiger Pint":2.73,"Fox Cider Pint":0.156,"Guinness Pint":0.312,"Heineken Pint":0.312},"2026-03":{"Guinness Pint":1.56,"Heineken Pint":1.95,"Tiger Pint":3.12,"Tiger Soju Can":0.384,"Fox Cider Pint":0.624,"Edelweiss Can":0.384},"2026-04":{"Tiger Pint":0.78},"2026-05":{"Heineken Pint":0.858,"Tiger Pint":2.184},"2026-06":{"Tiger Pint":2.73,"Guinness Pint":0.234,"Heineken Pint":0.546},"2026-07":{"Guinness Pint":0.546,"Tiger Pint":3.12,"Fox Cider Pint":0.0,"Heineken Pint":0.39},"2026-08":{"Heineken Pint":1.014,"Tiger Pint":5.46,"Fox Cider Can":0.2304,"Edelweiss Can":0.2304,"Guinness Pint":0.156}},"Loud Speaker @ Mytown":{"2025-12":{"Guinness Pint":0.546,"Heineken Pint":0.39,"Tiger Pint":1.326,"Tiger Soju Can":0.2304,"Edelweiss Can":0.2304,"Fox Cider Pint":0.156},"2026-01":{"Edelweiss Can":0.0768,"Heineken Pint":0.624,"Tiger Pint":0.234,"Heineken 5L Keg":0.1,"Shandy Anglia":0.0768,"Tiger Can":0.384},"2026-02":{"Heineken Pint":0.312,"Tiger Pint":0.936,"Edelweiss Can":0.0768},"2026-03":{"Heineken Pint":0.078,"Tiger Pint":0.39},"2026-04":{"Guinness Pint":0.156,"Tiger Pint":0.39,"Fox Cider Pint":0.078},"2026-05":{"Guinness Pint":0.156,"Heineken Pint":0.624,"Tiger Pint":0.78,"Tiger Soju Can":0.0768,"Fox Cider Pint":0.078,"Edelweiss Can":0.0768},"2026-06":{"Guinness Pint":0.156,"Heineken Pint":0.312,"Tiger Pint":0.702},"2026-07":{"Guinness Pint":0.156,"Heineken Pint":0.156,"Tiger Pint":0.234},"2026-08":{"Heineken Pint":0.546,"Tiger Pint":0.78,"Edelweiss Can":0.1536,"Fox Cider Can":0.1536,"Guinness Pint":0.078}},"Loud Speaker @ Taman Sutera":{"2025-12":{"Guinness Pint":0.546,"Heineken Pint":2.106,"Tiger Pint":2.106,"Edelweiss Can":0.1536,"Tiger Soju Can":0.1536,"Fox Cider Pint":0.156},"2026-01":{"Fox Cider Can":0.1536,"Edelweiss Can":0.1536,"Heineken Pint":1.872,"Tiger Pint":1.56,"Tiger Can":0.1536,"Fox Cider Pint":0.39,"Heineken 5L Keg":0.5,"Shandy Anglia":0.1536,"Tiger Soju Can":0.0768},"2026-02":{"Edelweiss Can":0.3072,"Guinness Pint":0.234,"Heineken Pint":1.638,"Tiger Pint":1.794,"Fox Cider Pint":0.312,"Tiger Soju Can":0.2304},"2026-03":{"Edelweiss Can":0.0768,"Guinness Pint":0.078,"Heineken Pint":0.468,"Tiger Pint":1.716,"Fox Cider Pint":0.078},"2026-04":{"Edelweiss Can":0.3072,"Tiger Soju Can":0.3072,"Fox Cider Pint":0.468,"Heineken Pint":1.014,"Tiger Pint":1.404,"Guinness Pint":0.234},"2026-05":{"Edelweiss Can":0.1536,"Guinness Pint":0.078,"Tiger Pint":1.404,"Fox Cider Pint":0.156,"Heineken Pint":0.858},"2026-06":{"Edelweiss Can":0.2304,"Guinness Pint":0.234,"Heineken Pint":1.17,"Tiger Pint":1.716,"Fox Cider Pint":0.312},"2026-07":{"Guinness Pint":0.234,"Heineken Pint":1.092,"Tiger Pint":1.716,"Edelweiss Can":0.1536},"2026-08":{"Edelweiss Can":0.384,"Heineken Pint":1.482,"Tiger Pint":2.106,"Guinness Pint":0.156,"Fox Cider Can":0.2304}},"Loud Speaker @ Georgetown":{"2025-12":{"Edelweiss Can":0.4608,"Guinness Pint":0.78,"Heineken Pint":1.56,"Tiger Pint":1.56,"Tiger Soju Can":0.4608,"Fox Cider Pint":0.156},"2026-01":{"Tiger Pint":2.34,"Tiger Can":0.1536,"Shandy Anglia":0.1536,"Heineken 5L Keg":0.3,"Edelweiss Can":0.1536,"Heineken Pint":0.39},"2026-02":{"Heineken Pint":0.702,"Tiger Can":0.768,"Fox Cider Pint":0.234,"Tiger Pint":2.34,"Edelweiss Can":0.0768,"Guinness Pint":0.078,"Tiger Soju Can":0.0768},"2026-03":{"Edelweiss Can":0.1536,"Guinness Pint":0.234,"Heineken Pint":0.936,"Tiger Pint":2.028,"Tiger Soju Can":0.1536,"Fox Cider Pint":0.078},"2026-04":{"Edelweiss Can":0.2304,"Guinness Pint":0.39,"Heineken Pint":1.17,"Tiger Pint":2.964,"Tiger Soju Can":0.2304,"Fox Cider Pint":0.234},"2026-05":{"Edelweiss Can":0.2304,"Guinness Pint":0.39,"Heineken Pint":1.092,"Tiger Pint":2.964,"Fox Cider Pint":0.312},"2026-06":{"Guinness Pint":0.312,"Heineken Pint":0.78,"Tiger Pint":2.34,"Edelweiss Can":0.1536},"2026-07":{"Edelweiss Can":0.1536,"Heineken Pint":1.014,"Tiger Pint":2.886,"Tiger Soju Can":0.0},"2026-08":{"Edelweiss Can":0.1536,"Guinness Pint":0.234,"Heineken Pint":0.78,"Tiger Pint":1.248,"Fox Cider Can":0.0768}},"Loud Speaker @ Ampang":{"2025-12":{"Guinness Pint":0.39,"Heineken Pint":0.624,"Tiger Soju Can":0.2304,"Edelweiss Can":0.1536,"Tiger Pint":0.234,"Fox Cider Pint":0.156},"2026-01":{"Tiger Can":0.0768,"Heineken 5L Keg":0.1,"Shandy Anglia":0.0768},"2026-02":{"Heineken Pint":0.234,"Tiger Pint":0.156},"2026-03":{"Heineken Pint":0.234,"Tiger Pint":0.234},"2026-04":{"Heineken Pint":0.156,"Tiger Pint":0.156},"2026-05":{"Tiger Pint":0.39,"Tiger Soju Can":0.1536,"Fox Cider Pint":0.078},"2026-07":{"Heineken Pint":0.156,"Tiger Pint":0.234},"2026-08":{"Fox Cider Can":0.1536,"Edelweiss Can":0.0768}},"Loud Speaker @ Puchong":{"2025-12":{"Edelweiss Can":0.2304,"Guinness Pint":0.78,"Heineken Pint":0.78,"Tiger Pint":1.17,"Fox Cider Pint":0.234},"2026-01":{"Tiger Can":0.1536,"Tiger Pint":0.546,"Tiger Soju Can":0.1536,"Heineken 5L Keg":0.4,"Shandy Anglia":0.1536},"2026-02":{"Heineken Pint":2.028,"Tiger Pint":2.184,"Fox Cider Pint":0.39,"Heineken 5L Keg":0.6,"Edelweiss Can":0.1536,"Tiger Can":0.1536},"2026-04":{"Tiger Pint":1.17,"Tiger Soju Can":0.3072},"2026-05":{"Tiger Pint":1.716,"Guinness Pint":0.312,"Heineken Pint":0.78,"Fox Cider Pint":0.078},"2026-06":{"Tiger Pint":1.794},"2026-08":{"Guinness Pint":0.39,"Heineken Pint":0.78,"Tiger Pint":2.184,"Fox Cider Can":0.2304,"Edelweiss Can":0.1536}},"Loud Speaker @ Setapak":{"2025-12":{"Tiger Pint":2.886,"Heineken 5L Keg":0.1,"Shandy Anglia":0.1536,"Guinness Pint":0.546,"Heineken Pint":1.404,"Edelweiss Can":0.1536,"Tiger Soju Can":0.1536,"Fox Cider Pint":0.156},"2026-01":{"Heineken 5L Keg":0.1,"Tiger Can":0.1536,"Tiger Pint":1.56,"Edelweiss Can":0.0768},"2026-02":{"Guinness Pint":0.234,"Heineken Pint":0.858,"Tiger Pint":1.794,"Edelweiss Can":0.0768,"Fox Cider Pint":0.078},"2026-03":{"Tiger Pint":2.34,"Heineken Pint":0.78,"Tiger Soju Can":0.0768,"Edelweiss Can":0.1536,"Guinness Pint":0.312},"2026-04":{"Guinness Pint":0.078,"Heineken Pint":0.468,"Tiger Pint":1.17,"Fox Cider Pint":0.078},"2026-05":{"Guinness Pint":0.546,"Heineken Pint":0.468,"Tiger Pint":1.404,"Edelweiss Can":0.0768,"Tiger Soju Can":0.0768,"Fox Cider Pint":0.078},"2026-06":{"Tiger Pint":1.95,"Heineken Pint":0.234},"2026-07":{"Tiger Pint":0.468},"2026-08":{"Edelweiss Can":0.1536,"Heineken Pint":0.468,"Tiger Pint":2.106,"Fox Cider Can":0.1536,"Guinness Pint":0.156}},"Loud Speaker @ Tropicana":{"2025-12":{"Edelweiss Can":0.3072,"Heineken Pint":1.56,"Tiger Pint":2.34,"Tiger Can":0.1536,"Tiger Soju Can":0.5376,"Shandy Anglia":0.0768,"Guinness Pint":0.78,"Fox Cider Pint":0.156},"2026-01":{"Heineken 5L Keg":0.1,"Heineken Pint":0.39,"Tiger Pint":2.34},"2026-02":{"Heineken Pint":0.78,"Tiger Pint":1.95,"Fox Cider Pint":0.156,"Heineken 5L Keg":0.1},"2026-03":{"Edelweiss Can":0.2304,"Guinness Pint":0.39,"Heineken Pint":0.78,"Tiger Pint":1.95,"Tiger Soju Can":0.2304,"Fox Cider Pint":0.234},"2026-04":{"Tiger Pint":1.56,"Heineken Pint":0.39},"2026-05":{"Edelweiss Can":0.1536,"Heineken Pint":0.78,"Tiger Pint":1.95,"Tiger Soju Can":0.1536,"Guinness Pint":0.39},"2026-06":{"Edelweiss Can":0.0768,"Tiger Pint":1.56,"Fox Cider Pint":0.156},"2026-07":{"Guinness Pint":0.234,"Heineken Pint":0.78,"Tiger Pint":1.17},"2026-08":{"Tiger Pint":2.73,"Guinness Pint":0.234,"Heineken Pint":0.39,"Fox Cider Can":0.2304,"Edelweiss Can":0.1536}},"Loud Speaker @ Sri Petaling":{"2025-12":{"Edelweiss Can":0.3072,"Tiger Pint":2.106,"Heineken Pint":1.56,"Tiger Can":0.5376,"Guinness Pint":0.39,"Tiger Soju Can":0.1536,"Fox Cider Pint":0.156},"2026-01":{"Edelweiss Can":0.2304,"Tiger Pint":0.702,"Guinness Pint":0.156,"Heineken Pint":0.156},"2026-02":{"Tiger Pint":2.574,"Fox Cider Can":0.0768,"Guinness Pint":0.39,"Heineken Pint":1.17,"Fox Cider Pint":0.234,"Heineken 5L Keg":0.1,"Edelweiss Can":0.1536},"2026-03":{"Heineken Pint":0.39,"Tiger Pint":0.78,"Tiger Soju Can":0.1536},"2026-04":{"Guinness Pint":0.39,"Heineken Pint":0.702,"Tiger Pint":1.95,"Fox Cider Pint":0.156},"2026-05":{"Heineken Pint":0.78,"Tiger Pint":1.95,"Guinness Pint":0.156,"Tiger Soju Can":0.0768,"Edelweiss Can":0.1536,"Fox Cider Pint":0.156},"2026-06":{"Guinness Pint":0.624,"Heineken Pint":0.78,"Tiger Pint":1.716,"Edelweiss Can":0.1536,"Tiger Soju Can":0.0,"Fox Cider Pint":0.0},"2026-07":{"Guinness Pint":0.156,"Heineken Pint":0.936,"Tiger Pint":2.34,"Tiger Soju Can":0.0768},"2026-08":{"Edelweiss Can":0.2304,"Guinness Pint":0.39,"Heineken Pint":0.702,"Tiger Pint":1.56,"Fox Cider Can":0.0768}},"Loud Speaker @ Mount Austin":{"2025-12":{"Edelweiss Can":0.3072,"Tiger Pint":2.028,"Tiger Soju Can":0.1536,"Fox Cider Pint":0.39,"Heineken Pint":1.95,"Guinness Pint":0.312},"2026-01":{"Edelweiss Can":0.6144,"Heineken Pint":1.404,"Tiger Pint":2.574,"Tiger Soju Can":0.4608,"Heineken 5L Keg":0.3,"Shandy Anglia":0.2304,"Fox Cider Pint":0.234,"Fox Cider Can":0.0768,"Guinness Pint":0.078},"2026-02":{"Edelweiss Can":0.4608,"Guinness Pint":0.702,"Heineken Pint":1.872,"Tiger Pint":1.638,"Tiger Soju Can":0.2304,"Fox Cider Pint":0.312},"2026-03":{"Edelweiss Can":0.3072,"Guinness Pint":0.156,"Heineken Pint":1.95,"Tiger Pint":2.574,"Tiger Soju Can":0.2304,"Fox Cider Pint":0.156},"2026-04":{"Guinness Pint":0.156,"Heineken Pint":1.872,"Tiger Pint":2.418,"Tiger Soju Can":0.0768,"Fox Cider Pint":0.156,"Edelweiss Can":0.1536},"2026-05":{"Edelweiss Can":0.2304,"Guinness Pint":0.39,"Heineken Pint":1.638,"Tiger Pint":3.12,"Tiger Soju Can":0.2304,"Fox Cider Pint":0.39},"2026-06":{"Edelweiss Can":0.5376,"Guinness Pint":0.234,"Heineken Pint":1.56,"Tiger Pint":1.638,"Tiger Soju Can":0.1536,"Fox Cider Pint":0.39},"2026-07":{"Edelweiss Can":0.768,"Guinness Pint":0.234,"Heineken Pint":1.092,"Tiger Pint":3.042,"Fox Cider Pint":0.156},"2026-08":{"Edelweiss Can":0.5376,"Guinness Pint":0.39,"Heineken Pint":1.95,"Fox Cider Can":0.2304,"Tiger Pint":2.418}},"Loud Speaker @ Sunway Carnival":{"2025-12":{"Tiger Pint":1.56,"Edelweiss Can":0.2304,"Guinness Pint":0.234,"Heineken Pint":0.78,"Tiger Soju Can":0.1536},"2026-01":{"Edelweiss Can":0.2304,"Guinness Pint":0.078,"Heineken Pint":0.39,"Tiger Pint":1.17,"Tiger Can":0.1536,"Tiger Soju Can":0.0768,"Heineken 5L Keg":0.2,"Shandy Anglia":0.2304},"2026-02":{"Tiger Pint":1.56,"Guinness Pint":0.234,"Heineken Pint":0.858},"2026-03":{"Guinness Pint":0.078,"Heineken Pint":0.39,"Tiger Pint":0.39,"Fox Cider Pint":0.156},"2026-04":{"Edelweiss Can":0.0768,"Guinness Pint":0.078,"Heineken Pint":0.702,"Tiger Pint":0.78,"Tiger Soju Can":0.0,"Fox Cider Pint":0.078},"2026-05":{"Edelweiss Can":0.1152,"Guinness Pint":0.312,"Heineken Pint":0.858,"Tiger Pint":1.56,"Fox Cider Pint":0.156},"2026-07":{"Edelweiss Can":0.0768,"Guinness Pint":0.078,"Heineken Pint":0.468,"Tiger Pint":0.78,"Fox Cider Pint":0.078},"2026-08":{"Edelweiss Can":0.0768,"Guinness Pint":0.078,"Heineken Pint":0.78,"Tiger Pint":1.014}}};
 
 // Populate outlet month dropdown
 (function(){
@@ -813,6 +849,218 @@ function renderComparePage(){
 
 renderComparePage();
 
+
+// ─── PAGE 5: OUTLET INCENTIVE BREAKDOWN ────────────────────────────────────
+
+// Populate incentive month dropdown (same months as OPD)
+(function(){
+  const sel=document.getElementById('incMonthSelect');
+  if(!sel)return;
+  const months=new Set();
+  Object.values(OPD).forEach(om=>Object.keys(om).forEach(m=>months.add(m)));
+  [...months].sort().forEach(mk=>{
+    const d=new Date(mk+'-01');
+    const lb=d.toLocaleDateString('en-MY',{month:'long',year:'numeric'});
+    const opt=document.createElement('option');
+    opt.value=mk;opt.textContent=lb;
+    sel.appendChild(opt);
+  });
+})();
+
+function getOutletIncentiveData(monthKey){
+  const result={};
+  Object.entries(OPD).forEach(([outlet,months])=>{
+    const prods={};
+    const mkeys=monthKey==='ALL'?Object.keys(months):[monthKey];
+    mkeys.forEach(mk=>{
+      if(!months[mk])return;
+      Object.entries(months[mk]).forEach(([p,hl])=>{
+        const rate=PMETA[p]||0;
+        const rm=hl*rate;
+        prods[p]=(prods[p]||0)+rm;
+      });
+    });
+    const tot=Object.values(prods).reduce((a,b)=>a+b,0);
+    if(tot>0)result[outlet]={prods,tot};
+  });
+  return result;
+}
+
+function renderIncentivePage(){
+  const mk=document.getElementById('incMonthSelect').value;
+  const data=getOutletIncentiveData(mk);
+  const outlets=Object.keys(data).sort((a,b)=>data[b].tot-data[a].tot);
+  const grandTotal=outlets.reduce((s,o)=>s+data[o].tot,0);
+
+  const period=mk==='ALL'?'Dec 2025 – Aug 2026':new Date(mk+'-01').toLocaleDateString('en-MY',{month:'long',year:'numeric'});
+  const title=mk==='ALL'?'All Months':period;
+
+  document.getElementById('inc2total').textContent=fr(grandTotal);
+  document.getElementById('inc2period').textContent=period;
+  document.getElementById('inc2count').textContent=outlets.length;
+  if(outlets.length>0){
+    const topO=outlets[0];
+    const botO=outlets[outlets.length-1];
+    document.getElementById('inc2top').textContent=SHORTCODE[topO]||topO.replace('Loud Speaker @ ','LS @ ');
+    document.getElementById('inc2topval').textContent=fr(data[topO].tot);
+    document.getElementById('inc2bot').textContent=SHORTCODE[botO]||botO.replace('Loud Speaker @ ','LS @ ');
+    document.getElementById('inc2botval').textContent=fr(data[botO].tot);
+  }
+  document.getElementById('inc2tableTitle').textContent='Outlet Incentive Breakdown (RM) — '+title;
+
+  const prodSet=new Set();
+  outlets.forEach(o=>Object.keys(data[o].prods).forEach(p=>prodSet.add(p)));
+  const prods=[...prodSet].sort((a,b)=>{
+    const ta=outlets.reduce((s,o)=>s+(data[o].prods[a]||0),0);
+    const tb=outlets.reduce((s,o)=>s+(data[o].prods[b]||0),0);
+    return tb-ta;
+  });
+
+  const tbl=document.getElementById('inc2table');
+  tbl.style.tableLayout='fixed';
+  const scW=78;
+  const colgrp=document.createElement('colgroup');
+  colgrp.innerHTML='<col style="width:145px">'+outlets.map(()=>`<col style="width:${scW}px">`).join('')+'<col style="width:90px">';
+  const oldCG=tbl.querySelector('colgroup');
+  if(oldCG)oldCG.remove();
+  tbl.insertBefore(colgrp,tbl.firstChild);
+
+  const shortNames=outlets.map(o=>SHORTCODE[o]||o.replace('Loud Speaker @ ','LS @ ').replace('Mini Studio @ ','MS @ '));
+
+  const thead=document.getElementById('inc2thead');
+  let hdr='<tr><th style="text-align:left">Product</th>';
+  shortNames.forEach(n=>{hdr+=`<th style="text-align:right;font-size:10px">${n}</th>`;});
+  hdr+='<th style="text-align:right">TOTAL</th></tr>';
+  thead.innerHTML=hdr;
+
+  const tbody=document.getElementById('inc2tbody');
+  let rows='';
+  prods.forEach(p=>{
+    const rate=PMETA[p]||0;
+    let rowTotal=0;
+    let cols='';
+    outlets.forEach(o=>{
+      const rm=data[o].prods[p]||0;
+      rowTotal+=rm;
+      cols+=`<td style="text-align:right;font-size:12px">${rm>0?fr(rm):'<span style="color:#cbd5e0">—</span>'}</td>`;
+    });
+    rows+=`<tr><td style="font-size:12px;font-weight:500">${p}<br><span style="font-size:10px;color:#94a3b8">RM${rate}/HL</span></td>${cols}<td style="text-align:right;font-weight:700;color:#2563eb">${fr(rowTotal)}</td></tr>`;
+  });
+  tbody.innerHTML=rows;
+
+  const tfoot=document.getElementById('inc2tfoot');
+  let ftr='<tr style="background:#f8fafc;font-weight:700;border-top:2px solid #e5e7eb"><td style="color:#374151">TOTAL</td>';
+  let gTotal=0;
+  outlets.forEach(o=>{
+    const t=data[o].tot;
+    gTotal+=t;
+    ftr+=`<td style="text-align:right;color:#1565c0">${fr(t)}</td>`;
+  });
+  ftr+=`<td style="text-align:right;color:#1565c0;font-size:14px">${fr(gTotal)}</td></tr>`;
+  tfoot.innerHTML=ftr;
+}
+
+// ─── PDF DOWNLOAD ───────────────────────────────────────────────────────────
+async function downloadIncentivePDF(){
+  const btn=document.getElementById('pdfBtn');
+  const origTxt=btn.innerHTML;
+  btn.innerHTML='&#9203; Generating...';
+  btn.disabled=true;
+  btn.style.opacity='0.7';
+
+  try{
+    const mk=document.getElementById('incMonthSelect').value;
+    const period=mk==='ALL'?'All Months (Dec 2025 – Aug 2026)':new Date(mk+'-01').toLocaleDateString('en-MY',{month:'long',year:'numeric'});
+    const filename='Outlet_Incentive_'+(mk==='ALL'?'All_Months':mk)+'.pdf';
+
+    // Clone the incentive main content for clean capture
+    const srcEl=document.getElementById('page-incentive');
+    const clone=srcEl.cloneNode(true);
+    // Remove the controls row (button) from clone
+    const ctrlRow=clone.querySelector('.pb2-controls');
+    if(ctrlRow)ctrlRow.remove();
+
+    // Build a wrapper for capture
+    const wrapper=document.createElement('div');
+    wrapper.style.cssText='position:fixed;left:-9999px;top:0;width:1100px;background:#f1f5f9;padding:0;font-family:Segoe UI,sans-serif;display:block';
+
+    // Header banner
+    const banner=document.createElement('div');
+    banner.style.cssText='background:linear-gradient(135deg,#1565c0,#1976d2);color:#fff;padding:18px 28px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center';
+    banner.innerHTML=`<div><div style="font-size:20px;font-weight:700">&#127866; Heineken Incentive Tracker</div><div style="font-size:13px;opacity:.85;margin-top:4px">Outlet Incentive Breakdown — ${period}</div></div><div style="text-align:right;font-size:12px;opacity:.85">Generated: ${new Date().toLocaleDateString('en-MY',{day:'2-digit',month:'long',year:'numeric'})}<br>Campaign: 1 Dec 2025 – 30 Nov 2028</div>`;
+    wrapper.appendChild(banner);
+
+    // KPI row from live DOM
+    const kpiRow=document.querySelector('#page-incentive .pb2-kpi-row');
+    if(kpiRow){
+      const kpiClone=kpiRow.cloneNode(true);
+      kpiClone.style.cssText='display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding:0 16px 16px';
+      wrapper.appendChild(kpiClone);
+    }
+
+    // Table
+    const tblCard=document.createElement('div');
+    tblCard.style.cssText='background:#fff;border-radius:10px;padding:16px;margin:0 16px 16px;border:1px solid #e2e8f0;overflow:visible';
+    const tbl=document.getElementById('inc2table');
+    if(tbl)tblCard.appendChild(tbl.cloneNode(true));
+    wrapper.appendChild(tblCard);
+
+    document.body.appendChild(wrapper);
+
+    const canvas=await html2canvas(wrapper,{
+      scale:1.6,
+      useCORS:true,
+      backgroundColor:'#f1f5f9',
+      logging:false,
+      windowWidth:1100
+    });
+    document.body.removeChild(wrapper);
+
+    const {jsPDF}=window.jspdf;
+    const pdf=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
+    const pageW=pdf.internal.pageSize.getWidth();   // 297mm
+    const pageH=pdf.internal.pageSize.getHeight();  // 210mm
+    const margin=8;
+    const usableW=pageW-margin*2;
+    const ratio=canvas.height/canvas.width;
+    const imgH=usableW*ratio;
+
+    const imgData=canvas.toDataURL('image/jpeg',0.92);
+
+    if(imgH<=pageH-margin*2){
+      pdf.addImage(imgData,'JPEG',margin,margin,usableW,imgH);
+    } else {
+      // Multi-page: slice canvas into page-height chunks
+      const sliceH=Math.floor(canvas.width*(pageH-margin*2)/usableW);
+      let yOffset=0;
+      let first=true;
+      while(yOffset<canvas.height){
+        if(!first)pdf.addPage();
+        first=false;
+        const remaining=canvas.height-yOffset;
+        const thisSlice=Math.min(sliceH,remaining);
+        const sliceCanvas=document.createElement('canvas');
+        sliceCanvas.width=canvas.width;
+        sliceCanvas.height=thisSlice;
+        const ctx=sliceCanvas.getContext('2d');
+        ctx.drawImage(canvas,0,-yOffset);
+        const sliceData=sliceCanvas.toDataURL('image/jpeg',0.92);
+        const sliceImgH=usableW*(thisSlice/canvas.width);
+        pdf.addImage(sliceData,'JPEG',margin,margin,usableW,sliceImgH);
+        yOffset+=sliceH;
+      }
+    }
+
+    pdf.save(filename);
+  } catch(e){
+    alert('PDF generation failed: '+e.message);
+    console.error(e);
+  } finally {
+    btn.innerHTML=origTxt;
+    btn.disabled=false;
+    btn.style.opacity='1';
+  }
+}
 </script>
 </body>
 </html>
