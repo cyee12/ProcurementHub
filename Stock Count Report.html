@@ -233,6 +233,7 @@ select{padding:8px 12px;border:1px solid #cbd5e0;border-radius:6px;font-size:14p
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
 <header>
@@ -878,13 +879,16 @@ function uploadExplImage(branch,month,code){
         canvas.width=w; canvas.height=h;
         canvas.getContext('2d').drawImage(img,0,0,w,h);
         var compressed=canvas.toDataURL('image/jpeg',0.5);
+        // Save to Firebase
         var url=FIREBASE_URL+'/'+FIREBASE_IMG_PATH+'/'+imgFbKey(branch,month,code)+'.json';
+        // Show uploading state
         var cId=code.replace(/[^A-Za-z0-9]/g,'_');
         var btnEl=document.getElementById('img-btn-'+cId);
         if(btnEl){ btnEl.textContent='⏳'; btnEl.disabled=true; }
         fetch(url,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({
           data:compressed, name:file.name, at:new Date().toISOString()
         })}).then(function(){
+          // Mark hasImage in explanation data
           var explData=loadExplData(branch,month);
           if(!explData[code]) explData[code]={reason:'',note:'',adj:null};
           explData[code].hasImage=true;
@@ -907,6 +911,7 @@ function viewExplImage(branch,month,code){
     var modal=document.createElement('div');
     modal.className='img-modal';
     modal.onclick=function(){ modal.remove(); };
+    // Close on Escape key
     var escHandler=function(ev){ if(ev.key==='Escape'){modal.remove();document.removeEventListener('keydown',escHandler);} };
     document.addEventListener('keydown',escHandler);
     var imgEl=document.createElement('img');
@@ -953,32 +958,29 @@ const FMH_MAP={"F-Kit-0290":{"name":"(7 CUT) MYUNGGA ROASTED SEAWEED SHEETS 350 
 function exportFMH(branch, month){
   const explData=loadExplData(branch,month);
   const items=Object.entries(explData).filter(([code,e])=>e.adj!==null&&e.adj!==undefined&&!isNaN(e.adj)&&e.adj!==0&&!isSystemReason(e.reason));
-  if(!items.length){ alert('No adjustments filled in.\n\nPlease enter Adj qty values first.'); return; }
+  if(!items.length){ alert('No FMH adjustments to export.\n\nOnly items with FMH-type reasons (not system fixes) are exported.\nPlease enter Adj qty for items that need FMH adjustment.'); return; }
 
-  // Build CSV content matching StockAction format
-  function csvCell(v){ return '"'+String(v==null?'':v).replace(/"/g,'""')+'"'; }
-  const lines=[['Product name','Packages','Quantity','Remark (optional)'].map(csvCell).join(',')];
+  // Build XLSX content matching StockAction format
+  const wsData=[['Product name','Packages','Quantity','Remark (optional)']];
   items.forEach(([code,e])=>{
     const fmh=FMH_MAP[code];
     const row=RAW.find(r=>r.code===code&&r.branch===branch&&r.month===month);
     const productName=fmh?fmh.name:(row?row.name:code);
     const uom=fmh&&fmh.uoms&&fmh.uoms.length?fmh.uoms[0]:(row?row.uom:'');
     const remark=[e.reason,e.note].filter(Boolean).join(' - ');
-    lines.push([productName,uom,e.adj,remark].map(csvCell).join(','));
+    wsData.push([productName,uom,e.adj,remark]);
   });
-  const csv=lines.join('\r\n');
-  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob);
-  a.download='StockAction_'+branch.replace(/[^a-zA-Z0-9]/g,'_')+'_'+month.replace(/ /g,'_')+'.csv';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(a.href);
+  const wb=XLSX.utils.book_new();
+  const ws=XLSX.utils.aoa_to_sheet(wsData);
+  // Auto-fit column widths
+  ws['!cols']=[{wch:50},{wch:20},{wch:10},{wch:40}];
+  XLSX.utils.book_append_sheet(wb,ws,'StockAction');
+  XLSX.writeFile(wb,'StockAction_'+branch.replace(/[^a-zA-Z0-9]/g,'_')+'_'+month.replace(/ /g,'_')+'.xlsx');
 }
 
 
 // Preset reason options
+// Reason categories: FMH = needs stock adjustment in FMH, SYSTEM = fix source data only
 const FMH_REASONS=['Key in wrong quantity','Forgot to count / missed item','Transfer not recorded',
   'Wastage not recorded','Spoilage / expired','Returned to supplier','Others'];
 const SYSTEM_REASONS=['Purchase data conversion wrong','Combo sales included in count','Recipe/SOP conversion wrong',
@@ -986,6 +988,7 @@ const SYSTEM_REASONS=['Purchase data conversion wrong','Combo sales included in 
 const ALL_REASONS=[...FMH_REASONS,...SYSTEM_REASONS];
 const EXPL_REASONS=['', ...ALL_REASONS];
 function isSystemReason(r){ return SYSTEM_REASONS.includes(r); }
+
 function handleReasonChange(el){
   var tr=el.closest('tr');
   if(!tr) return;
@@ -995,10 +998,16 @@ function handleReasonChange(el){
   var isSys=isSystemReason(sel.value);
   adj.disabled=isSys;
   if(isSys){
-    adj.value='';adj.placeholder='N/A';
-    adj.style.background='#f1f5f9';adj.style.color='#94a3b8';adj.style.cursor='not-allowed';
+    adj.value='';
+    adj.placeholder='N/A';
+    adj.style.background='#f1f5f9';
+    adj.style.color='#94a3b8';
+    adj.style.cursor='not-allowed';
   } else {
-    adj.placeholder='0.00';adj.style.background='';adj.style.color='';adj.style.cursor='';
+    adj.placeholder='0.00';
+    adj.style.background='';
+    adj.style.color='';
+    adj.style.cursor='';
   }
 }
 
@@ -1115,8 +1124,8 @@ function _renderExplInner(branch,month){
   // Sort: losses first (most negative), then gains
   const sorted=[...varRows].sort((a,b)=>a.var_val-b.var_val);
   const reasonOpts='<option value="">-- Select reason --</option>'+
-    '<optgroup label="Fix in FMH">'+FMH_REASONS.map(r=>'<option value="'+r+'">'+r+'</option>').join('')+'</optgroup>'+
-    '<optgroup label="Fix in System">'+SYSTEM_REASONS.map(r=>'<option value="'+r+'">'+r+'</option>').join('')+'</optgroup>';
+    '<optgroup label="\u2705 Fix in FMH (adjustment needed)">'+FMH_REASONS.map(r=>'<option value="'+r+'">'+r+'</option>').join('')+'</optgroup>'+
+    '<optgroup label="\u26A0\uFE0F Fix in system (no adjustment)">'+SYSTEM_REASONS.map(r=>'<option value="'+r+'">'+r+'</option>').join('')+'</optgroup>';
   let tbl='<div id="fmh-btn-wrap" style="margin-bottom:10px;text-align:right"></div>'+
     '<div class="expl-wrap"><div class="expl-table-scroll"><table class="expl-table"><thead><tr>'+
     '<th>Code</th><th>Item name</th><th>UOM</th>'+
@@ -1133,19 +1142,20 @@ function _renderExplInner(branch,month){
     const reasonVal=sv.reason||'';
     const noteVal=(sv.note||'').replace(/"/g,'&quot;');
     const adjVal=sv.adj!==undefined&&sv.adj!==null?sv.adj:'';
-    const onchg='autoSaveExpl(document.getElementById(&quot;expl-outlet&quot;).value,document.getElementById(&quot;expl-month&quot;).value)';
+    const onchg='handleReasonChange(this);autoSaveExpl(document.getElementById(&quot;expl-outlet&quot;).value,document.getElementById(&quot;expl-month&quot;).value)';
     const selOpts='<option value=""'+(reasonVal===''?' selected':'')+'>-- Select reason --</option>'+
-      '<optgroup label="Fix in FMH">'+FMH_REASONS.map(rx=>'<option value="'+rx+'"'+(rx===reasonVal?' selected':'')+'>'+rx+'</option>').join('')+'</optgroup>'+
-      '<optgroup label="Fix in System">'+SYSTEM_REASONS.map(rx=>'<option value="'+rx+'"'+(rx===reasonVal?' selected':'')+'>'+rx+'</option>').join('')+'</optgroup>';
+      '<optgroup label="\u2705 Fix in FMH (adjustment needed)">'+FMH_REASONS.map(rx=>'<option value="'+rx+'"'+(rx===reasonVal?' selected':'')+'>'+rx+'</option>').join('')+'</optgroup>'+
+      '<optgroup label="\u26A0\uFE0F Fix in system (no adjustment)">'+SYSTEM_REASONS.map(rx=>'<option value="'+rx+'"'+(rx===reasonVal?' selected':'')+'>'+rx+'</option>').join('')+'</optgroup>';
+    const isSysReason=isSystemReason(reasonVal);
     tbl+='<tr data-code="'+r.code+'">'+
       '<td style="font-size:11px;color:#718096;white-space:nowrap">'+r.code+'</td>'+
       '<td style="font-weight:600;color:#1a202c">'+r.name+'</td>'+
       '<td style="color:#718096">'+r.uom+'</td>'+
       '<td class="right '+qc+'">'+fmtQty(r.var_qty)+'</td>'+
       '<td class="right '+vc+'">'+fmt(r.var_val)+'</td>'+
-      '<td><select class="expl-select" onchange="handleReasonChange(this);'+onchg+'">'+selOpts+'</select></td>'+
+      '<td><select class="expl-select" onchange="'+onchg+'">'+selOpts+'</select></td>'+
       '<td><input type="text" class="expl-input expl-note-input" placeholder="Additional notes..." value="'+noteVal+'" onchange="'+onchg+'"></td>'+
-      '<td><input type="number" class="expl-input expl-num expl-adj" step="0.01" placeholder="0.00" value="'+adjVal+'" onchange="'+onchg+'"></td>'+
+      '<td><input type="number" class="expl-input expl-num expl-adj" step="0.01" placeholder="'+(isSysReason?'N/A':'0.00')+'" value="'+(isSysReason?'':adjVal)+'" '+(isSysReason?'disabled style="background:#f1f5f9;color:#94a3b8;cursor:not-allowed" ':'')+'onchange="'+onchg+'"></td>'+
       (function(){
         var cId=r.code.replace(/[^A-Za-z0-9]/g,'_');
         var _br=branch.replace(/'/g,"\\'"), _mo=month.replace(/'/g,"\\'"), _co=r.code.replace(/'/g,"\\'");
