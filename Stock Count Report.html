@@ -1236,6 +1236,7 @@ async function submitForApproval(branch, month){
     return {
       code: code,
       name: row?row.name:code,
+      uom: row?row.uom:'',
       var_qty: row?row.var_qty:0,
       var_val: row?row.var_val:0,
       reason: e.reason,
@@ -1363,20 +1364,45 @@ async function renderApprovalSection(branch, month){
       '<div class="approval-hod-hdr">\u2705 Pending HOD Approval ('+pending.length+')</div>';
 
     pending.forEach(([id,sub])=>{
-      const itemList=sub.items.map(it=>
-        '<div style="display:flex;gap:8px;padding:2px 0"><span style="color:#718096;min-width:90px">'+it.code+'</span>'+
-        '<span style="flex:1">'+it.name+'</span>'+
-        '<span style="min-width:80px;text-align:right;'+(it.var_val<0?'color:#c53030':'color:#276749')+'">'+
-        (it.var_val<0?'-':'')+'RM '+Math.abs(it.var_val).toLocaleString('en-MY',{minimumFractionDigits:2,maximumFractionDigits:2})+'</span>'+
-        '<span style="min-width:140px;color:#4a5568">'+it.reason+'</span></div>'
-      ).join('');
+      const totalVar=sub.items.reduce((s,it)=>s+(it.var_val||0),0);
+      const totalAdj=sub.items.filter(it=>it.adj&&it.adj!==0).length;
+      const itemTable='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:11px;margin-top:8px">'+
+        '<thead><tr style="background:#f7fafc;border-bottom:2px solid #e2e8f0">'+
+        '<th style="padding:6px 8px;text-align:left;font-weight:700;color:#4a5568">CODE</th>'+
+        '<th style="padding:6px 8px;text-align:left;font-weight:700;color:#4a5568">ITEM NAME</th>'+
+        '<th style="padding:6px 8px;text-align:center;font-weight:700;color:#4a5568">UOM</th>'+
+        '<th style="padding:6px 8px;text-align:center;font-weight:700;color:#4a5568">VAR QTY</th>'+
+        '<th style="padding:6px 8px;text-align:right;font-weight:700;color:#4a5568">VAR VALUE</th>'+
+        '<th style="padding:6px 8px;text-align:left;font-weight:700;color:#4a5568">REASON</th>'+
+        '<th style="padding:6px 8px;text-align:left;font-weight:700;color:#4a5568">NOTES</th>'+
+        '<th style="padding:6px 8px;text-align:center;font-weight:700;color:#4a5568">ADJ QTY</th>'+
+        '</tr></thead><tbody>'+
+        sub.items.map(it=>{
+          const vColor=it.var_val<0?'#c53030':'#276749';
+          return '<tr style="border-bottom:1px solid #edf2f7">'+
+            '<td style="padding:6px 8px;color:#718096;white-space:nowrap">'+it.code+'</td>'+
+            '<td style="padding:6px 8px;white-space:normal;word-break:break-word">'+it.name+'</td>'+
+            '<td style="padding:6px 8px;text-align:center;color:#718096">'+(it.uom||'')+'</td>'+
+            '<td style="padding:6px 8px;text-align:center;color:'+vColor+'">'+(it.var_qty>0?'+':'')+it.var_qty.toFixed(2)+'</td>'+
+            '<td style="padding:6px 8px;text-align:right;color:'+vColor+'">'+(it.var_val<0?'(':'')+'RM '+Math.abs(it.var_val).toLocaleString(\'en-MY\',{minimumFractionDigits:2,maximumFractionDigits:2})+(it.var_val<0?')':'')+'</td>'+
+            '<td style="padding:6px 8px;color:#4a5568">'+it.reason+'</td>'+
+            '<td style="padding:6px 8px;color:#64748b;font-size:10px">'+(it.note||'-')+'</td>'+
+            '<td style="padding:6px 8px;text-align:center;font-weight:600;color:#2d3748">'+(it.adj||'0')+'</td>'+
+          '</tr>';
+        }).join('')+
+        '</tbody></table></div>'+
+        '<div style="display:flex;gap:16px;padding:8px 0;font-size:11px;color:#4a5568;border-top:1px solid #e2e8f0;margin-top:4px">'+
+          '<span><strong>Total Items:</strong> '+sub.totalItems+'</span>'+
+          '<span><strong>Total Variance:</strong> <span style="color:'+(totalVar<0?'#c53030':'#276749')+'">'+(totalVar<0?'(':'')+'RM '+Math.abs(totalVar).toLocaleString(\'en-MY\',{minimumFractionDigits:2,maximumFractionDigits:2})+(totalVar<0?')':'')+'</span></span>'+
+          '<span><strong>Items with Adj:</strong> '+totalAdj+'</span>'+
+        '</div>';
 
       out+='<div class="approval-card">'+
         '<div class="approval-card-hdr">'+
           '<div class="approval-card-title">Submitted by: '+sub.submittedBy+'</div>'+
           '<div class="approval-card-meta">'+formatTimestamp(sub.submittedAt)+' \u00B7 '+sub.totalItems+' items</div>'+
         '</div>'+
-        '<div class="approval-card-items">'+itemList+'</div>'+
+        '<div class="approval-card-items">'+itemTable+'</div>'+
         '<div class="approval-card-actions">'+
           '<input type="text" id="hod-name-'+id+'" placeholder="HOD name..." />'+
           '<button class="approval-btn approval-btn-approve" onclick="hodApprove(\u0027'+branch.replace(/'/g,"\\'")+
