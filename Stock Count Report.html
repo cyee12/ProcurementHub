@@ -1384,7 +1384,7 @@ async function renderApprovalSection(branch, month){
             '<td style="padding:6px 8px;white-space:normal;word-break:break-word">'+it.name+'</td>'+
             '<td style="padding:6px 8px;text-align:center;color:#718096">'+(it.uom||'')+'</td>'+
             '<td style="padding:6px 8px;text-align:center;color:'+vColor+'">'+(it.var_qty>0?'+':'')+it.var_qty.toFixed(2)+'</td>'+
-            '<td style="padding:6px 8px;text-align:right;color:'+vColor+'">'+(it.var_val<0?'(':'')+'RM '+Math.abs(it.var_val).toLocaleString(\'en-MY\',{minimumFractionDigits:2,maximumFractionDigits:2})+(it.var_val<0?')':'')+'</td>'+
+            '<td style="padding:6px 8px;text-align:right;color:'+vColor+'">'+(it.var_val<0?'(':'')+'RM '+Math.abs(it.var_val).toLocaleString("en-MY",{minimumFractionDigits:2,maximumFractionDigits:2})+(it.var_val<0?')':'')+'</td>'+
             '<td style="padding:6px 8px;color:#4a5568">'+it.reason+'</td>'+
             '<td style="padding:6px 8px;color:#64748b;font-size:10px">'+(it.note||'-')+'</td>'+
             '<td style="padding:6px 8px;text-align:center;font-weight:600;color:#2d3748">'+(it.adj||'0')+'</td>'+
@@ -1393,7 +1393,7 @@ async function renderApprovalSection(branch, month){
         '</tbody></table></div>'+
         '<div style="display:flex;gap:16px;padding:8px 0;font-size:11px;color:#4a5568;border-top:1px solid #e2e8f0;margin-top:4px">'+
           '<span><strong>Total Items:</strong> '+sub.totalItems+'</span>'+
-          '<span><strong>Total Variance:</strong> <span style="color:'+(totalVar<0?'#c53030':'#276749')+'">'+(totalVar<0?'(':'')+'RM '+Math.abs(totalVar).toLocaleString(\'en-MY\',{minimumFractionDigits:2,maximumFractionDigits:2})+(totalVar<0?')':'')+'</span></span>'+
+          '<span><strong>Total Variance:</strong> <span style="color:'+(totalVar<0?'#c53030':'#276749')+'">'+(totalVar<0?'(':'')+'RM '+Math.abs(totalVar).toLocaleString("en-MY",{minimumFractionDigits:2,maximumFractionDigits:2})+(totalVar<0?')':'')+'</span></span>'+
           '<span><strong>Items with Adj:</strong> '+totalAdj+'</span>'+
         '</div>';
 
