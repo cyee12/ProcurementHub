@@ -892,10 +892,34 @@ const EXPL_REASON_GROUPS=[
     'Purchase data conversion wrong','Combo sales included in count',
     'Recipe/SOP conversion wrong','System data entry error']}
 ];
+// System-fix reasons — outlet count correct, no adjustment needed
+const SYSTEM_REASONS=['Purchase data conversion wrong','Combo sales included in count',
+  'Recipe/SOP conversion wrong','System data entry error'];
 // Flat list for backward compat
 const EXPL_REASONS=[''];
 EXPL_REASON_GROUPS.forEach(g=>g.reasons.forEach(r=>EXPL_REASONS.push(r)));
 
+function handleReasonChange(sel){
+  const tr=sel.closest('tr');
+  if(!tr) return;
+  const adjInput=tr.querySelector('.expl-adj');
+  if(!adjInput) return;
+  const isSystem=SYSTEM_REASONS.includes(sel.value);
+  if(isSystem){
+    adjInput.value='';
+    adjInput.disabled=true;
+    adjInput.style.background='#2d3748';
+    adjInput.style.color='#718096';
+    adjInput.style.cursor='not-allowed';
+    adjInput.placeholder='N/A';
+  } else {
+    adjInput.disabled=false;
+    adjInput.style.background='';
+    adjInput.style.color='';
+    adjInput.style.cursor='';
+    adjInput.placeholder='0.00';
+  }
+}
 function autoSaveExpl(branch,month){
   const data={};
   document.querySelectorAll('#expl-table-wrap tr[data-code]').forEach(tr=>{
@@ -903,7 +927,7 @@ function autoSaveExpl(branch,month){
     const reason=tr.querySelector('.expl-select')?tr.querySelector('.expl-select').value:'';
     const note=tr.querySelector('.expl-note-input')?tr.querySelector('.expl-note-input').value.trim():'';
     const adjRaw=tr.querySelector('.expl-adj')?tr.querySelector('.expl-adj').value.trim():'';
-    const adj=adjRaw===''?null:parseFloat(adjRaw);
+    const adj=SYSTEM_REASONS.includes(reason)?null:(adjRaw===''?null:parseFloat(adjRaw));
     if(reason||note||(adj!==null&&!isNaN(adj))) data[code]={reason,note,adj:isNaN(adj)?null:adj};
   });
   _explStore[storageKey(branch,month)]=data;
@@ -1007,6 +1031,7 @@ function _renderExplInner(branch,month){
     const noteVal=(sv.note||'').replace(/"/g,'&quot;');
     const adjVal=sv.adj!==undefined&&sv.adj!==null?sv.adj:'';
     const onchg='autoSaveExpl(document.getElementById(&quot;expl-outlet&quot;).value,document.getElementById(&quot;expl-month&quot;).value)';
+    const onReasonChg='handleReasonChange(this);'+onchg;
     let selOpts='<option value="">-- Select reason --</option>';
     EXPL_REASON_GROUPS.forEach(g=>{
       selOpts+='<optgroup label="'+g.label+'">';
@@ -1019,9 +1044,9 @@ function _renderExplInner(branch,month){
       '<td style="color:#718096">'+r.uom+'</td>'+
       '<td class="right '+qc+'">'+fmtQty(r.var_qty)+'</td>'+
       '<td class="right '+vc+'">'+fmt(r.var_val)+'</td>'+
-      '<td><select class="expl-select" onchange="'+onchg+'">'+selOpts+'</select></td>'+
+      '<td><select class="expl-select" onchange="'+onReasonChg+'">'+selOpts+'</select></td>'+
       '<td><input type="text" class="expl-input expl-note-input" placeholder="Additional notes..." value="'+noteVal+'" onchange="'+onchg+'"></td>'+
-      '<td><input type="number" class="expl-input expl-num expl-adj" step="0.01" placeholder="0.00" value="'+adjVal+'" onchange="'+onchg+'"></td>'+
+      (function(){var _sysR=SYSTEM_REASONS.includes(reasonVal);return _sysR?'<td><input type="number" class="expl-input expl-num expl-adj" placeholder="N/A" value="" disabled style="background:#2d3748;color:#718096;cursor:not-allowed"></td>':'<td><input type="number" class="expl-input expl-num expl-adj" step="0.01" placeholder="0.00" value="'+adjVal+'" onchange="'+onchg+'"></td>';})()+
     '</tr>';
   });
   const explained=Object.keys(saved).filter(c=>saved[c]&&saved[c].reason&&varRows.find(r=>r.code===c)).length;
